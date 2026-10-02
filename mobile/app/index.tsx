@@ -24,7 +24,7 @@ const initialClients: Client[] = [
     name: 'Youssef El Amrani',
     phone: '+212 6 6123 4567',
     email: 'youssef.elamrani@gmail.com',
-       contry:'france',
+       country: 'france',
 
     city: 'Casablanca',
     address: '24 Rue de Goulmima, Bourgone, Casablanca',
@@ -35,7 +35,7 @@ const initialClients: Client[] = [
     name: 'Marie Dupont',
     phone: '+33 6 7890 1234',
     email: 'marie.dupont@yahoo.fr',
-    contry:'france',
+    country: 'france',
     city: 'Paris',
     address: '142 Rue de Rivoli, 75001 Paris',
     totalShipments: 3,
@@ -45,7 +45,7 @@ const initialClients: Client[] = [
     name: 'Karim Bensalah',
     phone: '+212 6 9876 5432',
     email: 'k.bensalah@outlook.com',
-    contry:'morocco',
+    country: 'morocco',
 
     city: 'Marrakech',
     address: '45 Avenue Mohammed VI, Marrakech',
@@ -56,7 +56,7 @@ const initialClients: Client[] = [
     name: 'Jean-Pierre Martin',
     phone: '+33 6 1234 5678',
     email: 'jp.martin@gmail.com',
-    contry:'morocco',
+    country: 'morocco',
 
     city: 'Lyon',
     address: '12 Quai Saint-Antoine, 69002 Lyon',
@@ -73,12 +73,13 @@ const initialColis: Colis[] = [
     receiverPhone: '+212 6 6123 4567',
     fromCity: 'Paris',
     toCity: 'Casablanca',
-        quantity:3,
+    quantity: 3,
     weight: 12.5,
     price: 35,
     status: 'in_transit',
     date: '06/08/2026',
     description: 'Clothing items, documents, and sweets.',
+    image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=500',
   },
   {
     id: 'CX-3940',
@@ -88,12 +89,13 @@ const initialColis: Colis[] = [
     receiverPhone: '+212 6 9876 5432',
     fromCity: 'Lyon',
     toCity: 'Marrakech',
-        quantity:1,
+    quantity: 1,
     weight: 8.2,
     price: 24,
     status: 'pending',
     date: '07/08/2026',
     description: 'Electronics parts and books.',
+    image: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=500',
   },
   {
     id: 'CX-1032',
@@ -103,12 +105,13 @@ const initialColis: Colis[] = [
     receiverPhone: '+212 6 9876 5432',
     fromCity: 'Marseille',
     toCity: 'Tangier',
-    quantity:2,
+    quantity: 2,
     weight: 22.0,
     price: 65,
     status: 'delivered',
     date: '01/08/2026',
     description: 'Household tools and coffee machine.',
+    image: 'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=500',
   },
   // Reverse directions
   {
@@ -124,6 +127,7 @@ const initialColis: Colis[] = [
     status: 'in_transit',
     date: '05/08/2026',
     description: 'Moroccan argan oil and spices.',
+    image: 'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?w=500',
   },
   {
     id: 'CX-7731',
@@ -133,13 +137,13 @@ const initialColis: Colis[] = [
     receiverPhone: '+33 6 1234 5678',
     fromCity: 'Marrakech',
     toCity: 'Lyon',
-    quantity:2,
-
+    quantity: 2,
     weight: 15.0,
     price: 45,
     status: 'delivered',
     date: '28/07/2026',
     description: 'Handcrafted leather bags and slippers.',
+    image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=500',
   },
 ];
 
@@ -208,6 +212,10 @@ export default function AppScreen() {
     );
   };
 
+  const handleUpdateColis = (updatedColis: Colis) => {
+    setColisList(prev => prev.map(c => c.id === updatedColis.id ? updatedColis : c));
+  };
+
   const handleAddClient = (newClient: Client) => {
     setClientsList([newClient, ...clientsList]);
   };
@@ -239,6 +247,7 @@ export default function AppScreen() {
             direction={direction}
             colisList={routeColis}
             onAddColis={handleAddColis}
+            onUpdateColis={handleUpdateColis}
           />
         );
       case 'clients':

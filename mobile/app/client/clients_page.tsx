@@ -17,6 +17,7 @@ export interface Client {
   name: string;
   phone: string;
   email: string;
+  country?: string;
   city: string;
   address: string;
   totalShipments: number;
