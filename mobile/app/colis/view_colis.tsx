@@ -110,6 +110,13 @@ export default function ViewColis({
               </View>
 
               <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Delivery Mode</Text>
+                <Text style={styles.detailValue}>
+                  {colis.isADomicile !== false ? '🏠 À domicile' : '📦 Point relais'}
+                </Text>
+              </View>
+
+              <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Shipment Status</Text>
                 <View style={[styles.statusBadge, getStatusStyle(colis.status)]}>
                   <Text style={styles.statusText}>{getStatusLabel(colis.status)}</Text>
@@ -153,7 +160,7 @@ export default function ViewColis({
             {/* Route & Contact Section */}
             <View style={styles.modalSection}>
               <Text style={styles.sectionTitle}>🗺️ Route & Contact Info</Text>
-              
+
               <View style={styles.routeStep}>
                 <View style={[styles.stepDot, { backgroundColor: '#10b981' }]} />
                 <View style={styles.stepContent}>

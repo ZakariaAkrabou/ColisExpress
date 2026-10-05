@@ -43,6 +43,7 @@ export default function UpdateColis({
   const [quantity, setQuantity] = useState('1');
   const [price, setPrice] = useState('');
   const [isPaid, setIsPaid] = useState<boolean>(true);
+  const [isADomicile, setIsADomicile] = useState<boolean>(true);
   const [status, setStatus] = useState<Colis['status']>('pending');
   const [description, setDescription] = useState('');
   const [image, setImage] = useState('');
@@ -59,6 +60,7 @@ export default function UpdateColis({
       setQuantity(colis.quantity ? String(colis.quantity) : '1');
       setPrice(colis.price ? String(colis.price) : '');
       setIsPaid(colis.isPaid !== undefined ? colis.isPaid : true);
+      setIsADomicile(colis.isADomicile !== undefined ? colis.isADomicile : true);
       setStatus(colis.status || 'pending');
       setDescription(colis.description || '');
       setImage(colis.image || PRESET_IMAGES[0]);
@@ -85,6 +87,7 @@ export default function UpdateColis({
       weight: parseFloat(weight) || 1,
       price: parseFloat(price) || 10,
       isPaid: isPaid,
+      isADomicile: isADomicile,
       status,
       description: description.trim(),
       image: image.trim() || PRESET_IMAGES[0],
@@ -191,6 +194,62 @@ export default function UpdateColis({
                   ]}
                 >
                   Non / No (Unpaid)
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Radio Buttons for Delivery Mode */}
+            <Text style={styles.formSectionTitle}>🏠 Delivery Mode (Mode de livraison)</Text>
+            <View style={styles.radioGroup}>
+              <TouchableOpacity
+                style={[
+                  styles.radioButton,
+                  isADomicile === true && styles.radioButtonSelectedSuccess,
+                ]}
+                onPress={() => setIsADomicile(true)}
+                activeOpacity={0.85}
+              >
+                <View
+                  style={[
+                    styles.radioCircle,
+                    isADomicile === true && styles.radioCircleSelectedSuccess,
+                  ]}
+                >
+                  {isADomicile === true && <View style={styles.radioInnerCircle} />}
+                </View>
+                <Text
+                  style={[
+                    styles.radioText,
+                    isADomicile === true && styles.radioTextSelectedSuccess,
+                  ]}
+                >
+                  🏠 À domicile
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.radioButton,
+                  isADomicile === false && styles.radioButtonSelectedSuccess,
+                ]}
+                onPress={() => setIsADomicile(false)}
+                activeOpacity={0.85}
+              >
+                <View
+                  style={[
+                    styles.radioCircle,
+                    isADomicile === false && styles.radioCircleSelectedSuccess,
+                  ]}
+                >
+                  {isADomicile === false && <View style={styles.radioInnerCircle} />}
+                </View>
+                <Text
+                  style={[
+                    styles.radioText,
+                    isADomicile === false && styles.radioTextSelectedSuccess,
+                  ]}
+                >
+                  📦 Point relais
                 </Text>
               </TouchableOpacity>
             </View>

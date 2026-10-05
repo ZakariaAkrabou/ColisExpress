@@ -23,6 +23,7 @@ export interface Colis {
   weight: number; // in kg
   price: number; // in EUR
   isPaid?: boolean; // Payment status (true = Yes/Payed, false = No/Unpaid)
+  isADomicile?: boolean; //  (true = À domicile, false = Point de collecte)
   status: 'pending' | 'in_transit' | 'delivered';
   date: string;
   description: string;
@@ -62,6 +63,7 @@ export default function CreateColis({
   const [quantity, setQuantity] = useState('1');
   const [price, setPrice] = useState('');
   const [isPaid, setIsPaid] = useState<boolean>(true); // Default: Yes (Paid)
+  const [isADomicile, setIsADomicile] = useState<boolean>(true); // Default: À domicile
   const [description, setDescription] = useState('');
   const [image, setImage] = useState(PRESET_IMAGES[0]);
 
@@ -91,6 +93,7 @@ export default function CreateColis({
     setQuantity('1');
     setPrice('');
     setIsPaid(true);
+    setIsADomicile(true);
     setDescription('');
     setImage(PRESET_IMAGES[0]);
   };
@@ -129,6 +132,7 @@ export default function CreateColis({
       weight: parseFloat(weight) || 1,
       price: parseFloat(price) || 10,
       isPaid: isPaid,
+      isADomicile: isADomicile,
       status: 'pending',
       date: new Date().toLocaleDateString('fr-FR'),
       description: description.trim() || 'No description provided',
@@ -244,7 +248,61 @@ export default function CreateColis({
                   value={fromCity}
                   onChangeText={setFromCity}
                 />
+   {/* Radio Buttons for Delivery Mode (isADomicile) */}
+                <Text style={styles.inputSubLabel}>🏠 Mode de Livraison *</Text>
+                <View style={styles.radioGroup}>
+                  <TouchableOpacity
+                    style={[
+                      styles.radioButton,
+                      isADomicile === true && styles.radioButtonSelectedSuccess,
+                    ]}
+                    onPress={() => setIsADomicile(true)}
+                    activeOpacity={0.85}
+                  >
+                    <View
+                      style={[
+                        styles.radioCircle,
+                        isADomicile === true && styles.radioCircleSelectedSuccess,
+                      ]}
+                    >
+                      {isADomicile === true && <View style={styles.radioInnerCircle} />}
+                    </View>
+                    <Text
+                      style={[
+                        styles.radioText,
+                        isADomicile === true && styles.radioTextSelectedSuccess,
+                      ]}
+                    >
+                      🏠 À domicile
+                    </Text>
+                  </TouchableOpacity>
 
+                  <TouchableOpacity
+                    style={[
+                      styles.radioButton,
+                      isADomicile === false && styles.radioButtonSelectedSuccess,
+                    ]}
+                    onPress={() => setIsADomicile(false)}
+                    activeOpacity={0.85}
+                  >
+                    <View
+                      style={[
+                        styles.radioCircle,
+                        isADomicile === false && styles.radioCircleSelectedSuccess,
+                      ]}
+                    >
+                      {isADomicile === false && <View style={styles.radioInnerCircle} />}
+                    </View>
+                    <Text
+                      style={[
+                        styles.radioText,
+                        isADomicile === false && styles.radioTextSelectedSuccess,
+                      ]}
+                    >
+                      📦 Point relais
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 <TouchableOpacity
                   style={styles.nextStepButton}
                   onPress={handleNextStep1}
@@ -252,7 +310,9 @@ export default function CreateColis({
                 >
                   <Text style={styles.nextStepText}>Next: Receiver Details ➔</Text>
                 </TouchableOpacity>
+                
               </View>
+              
             )}
 
             {/* STEP 2: RECEIVER DETAILS */}
@@ -288,7 +348,7 @@ export default function CreateColis({
                   value={toCity}
                   onChangeText={setToCity}
                 />
-                {/* Radio Button for Payed (Yes / No) */}
+                {/* Radio Buttons for Payment Status */}
                 <Text style={styles.inputSubLabel}>💳 Payé / Payment Status *</Text>
                 <View style={styles.radioGroup}>
                   <TouchableOpacity
@@ -343,6 +403,9 @@ export default function CreateColis({
                     </Text>
                   </TouchableOpacity>
                 </View>
+
+             
+
                 <View style={styles.stepNavRow}>
                   <TouchableOpacity
                     style={styles.backStepButton}

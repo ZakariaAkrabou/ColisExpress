@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import ColisPage, { Colis } from './colis/colis_page';
 import ClientsPage, { Client } from './client/clients_page';
+import LocationsPage from './locations/locations_page';
 import SettingsPage from './settings_page';
 
 const { width } = Dimensions.get('window');
@@ -150,7 +151,7 @@ const initialColis: Colis[] = [
 export default function AppScreen() {
   const [currentScreen, setCurrentScreen] = useState<'direction_selection' | 'dashboard'>('direction_selection');
   const [direction, setDirection] = useState<'FR_TO_MA' | 'MA_TO_FR'>('FR_TO_MA');
-  const [activeTab, setActiveTab] = useState<'colis' | 'clients' | 'settings'>('colis');
+  const [activeTab, setActiveTab] = useState<'colis' | 'clients' | 'locations' | 'settings'>('colis');
   const [colisList, setColisList] = useState<Colis[]>(initialColis);
   const [clientsList, setClientsList] = useState<Client[]>(initialClients);
   
@@ -258,6 +259,8 @@ export default function AppScreen() {
             onAddClient={handleAddClient}
           />
         );
+      case 'locations':
+        return <LocationsPage />;
       case 'settings':
         return (
           <SettingsPage
@@ -275,6 +278,8 @@ export default function AppScreen() {
         return 'Colis Express';
       case 'clients':
         return 'Clients Directory';
+      case 'locations':
+        return 'Locations';
       case 'settings':
         return 'App Settings';
     }
@@ -404,6 +409,17 @@ export default function AppScreen() {
               >
                 <Text style={styles.navIcon}>👥</Text>
                 <Text style={[styles.navText, activeTab === 'clients' && styles.activeNavText]}>Clients (Contacts)</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.navItem, activeTab === 'locations' && styles.activeNavItem]}
+                onPress={() => {
+                  setActiveTab('locations');
+                  toggleSidebar();
+                }}
+              >
+                <Text style={styles.navIcon}>📍</Text>
+                <Text style={[styles.navText, activeTab === 'locations' && styles.activeNavText]}>Locations</Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
