@@ -36,7 +36,8 @@ export interface HomeScreenProps {
   onToggleDirection?: () => void;
   onMenuPress?: () => void;
   onNotificationPress?: () => void;
-  onNavigateTab?: (tab: 'colis' | 'clients' | 'invoices' | 'stats' | 'settings') => void;
+  onLocationPress?: () => void;
+  onNavigateTab?: (tab: 'colis' | 'clients' | 'locations' | 'invoices' | 'stats' | 'settings') => void;
   onViewAllStats?: () => void;
   stats?: Partial<HomeStats>;
 }
@@ -46,6 +47,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onToggleDirection,
   onMenuPress,
   onNotificationPress,
+  onLocationPress,
   onNavigateTab,
   onViewAllStats,
   stats = {
@@ -64,6 +66,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         direction={direction}
         onMenuPress={onMenuPress}
         onNotificationPress={onNotificationPress}
+        onLocationPress={onLocationPress || (() => onNavigateTab?.('locations'))}
         unreadNotifications={true}
       />
 

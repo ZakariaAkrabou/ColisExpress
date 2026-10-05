@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import HomeScreen from './home/home';
 import ColisPage, { Colis } from './colis/colis_page';
 import ClientsPage, { Client } from './client/clientPage';
+import LocationsPage from './locations/locations_page';
 import SettingsPage from './settings_page';
 import Footer, { TabType } from '../components/layout/Footer';
 import { INITIAL_COLIS, INITIAL_CLIENTS } from '../services/mockData';
@@ -38,24 +39,28 @@ export default function AppScreen() {
 
   const renderCurrentRoute = () => {
     switch (currentRoute) {
-      case 'home':
-        return (
-          <HomeScreen
-            direction={direction}
-            onToggleDirection={toggleDirection}
-            onNavigateTab={(tab) => {
-              if (tab === 'colis') setCurrentRoute('colis');
-              else if (tab === 'clients') setCurrentRoute('clients');
-              else if (tab === 'settings') setCurrentRoute('more');
-            }}
-          />
-        );
       case 'colis':
         return (
           <ColisPage
             direction={direction}
             colisList={colisList}
             onAddColis={handleAddColis}
+          />
+        );
+      case 'locations':
+        return <LocationsPage />;
+      case 'home':
+        return (
+          <HomeScreen
+            direction={direction}
+            onToggleDirection={toggleDirection}
+            onLocationPress={() => setCurrentRoute('locations')}
+            onNavigateTab={(tab) => {
+              if (tab === 'colis') setCurrentRoute('colis');
+              else if (tab === 'clients') setCurrentRoute('clients');
+              else if (tab === 'locations') setCurrentRoute('locations');
+              else if (tab === 'settings') setCurrentRoute('settings');
+            }}
           />
         );
       case 'clients':
@@ -68,6 +73,7 @@ export default function AppScreen() {
             onDeleteClient={handleDeleteClient}
           />
         );
+      case 'settings':
       case 'more':
         return (
           <SettingsPage
@@ -77,7 +83,19 @@ export default function AppScreen() {
           />
         );
       default:
-        return <HomeScreen direction={direction} />;
+        return (
+          <HomeScreen
+            direction={direction}
+            onToggleDirection={toggleDirection}
+            onLocationPress={() => setCurrentRoute('locations')}
+            onNavigateTab={(tab) => {
+              if (tab === 'colis') setCurrentRoute('colis');
+              else if (tab === 'clients') setCurrentRoute('clients');
+              else if (tab === 'locations') setCurrentRoute('locations');
+              else if (tab === 'settings') setCurrentRoute('settings');
+            }}
+          />
+        );
     }
   };
 

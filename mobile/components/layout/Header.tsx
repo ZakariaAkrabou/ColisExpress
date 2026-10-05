@@ -8,7 +8,7 @@ import {
   StatusBar,
   Image,
 } from 'react-native';
-import { Bell } from 'lucide-react-native';
+import { Bell, MapPin } from 'lucide-react-native';
 
 export interface HeaderProps {
   direction?: 'MA_TO_FR' | 'FR_TO_MA';
@@ -17,6 +17,8 @@ export interface HeaderProps {
   unreadNotifications?: boolean | number;
   title?: string;
   subtitle?: string;
+  location?: string;
+  onLocationPress?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -25,9 +27,13 @@ export const Header: React.FC<HeaderProps> = ({
   unreadNotifications = true,
   title = 'ColisExpress',
   subtitle,
+  location,
+  onLocationPress,
 }) => {
-  const displaySubtitle =
-    subtitle || (direction === 'MA_TO_FR' ? 'Maroc ➔ France' : 'France ➔ Maroc');
+  const displayLocation =
+    location ||
+    subtitle ||
+    (direction === 'MA_TO_FR' ? 'Maroc ➔ France' : 'France ➔ Maroc');
 
   return (
     <View style={styles.headerWrapper} className="bg-blue-700 pt-3 pb-3 px-4 shadow-md">
@@ -45,26 +51,51 @@ export const Header: React.FC<HeaderProps> = ({
             <Text style={styles.titleText} className="text-white text-lg font-bold tracking-tight">
               {title}
             </Text>
-            <Text style={styles.subtitleText} className="text-blue-100 text-xs font-medium">
-              {displaySubtitle}
-            </Text>
+            
+            {/* Location row */}
+            <TouchableOpacity
+              activeOpacity={onLocationPress ? 0.7 : 1}
+              onPress={onLocationPress}
+              disabled={!onLocationPress}
+              style={styles.locationRow}
+            >
+              <MapPin size={13} color="#93c5fd" strokeWidth={2.4} style={styles.pinIcon} />
+              <Text style={styles.subtitleText} className="text-blue-100 text-xs font-medium" numberOfLines={1}>
+                {displayLocation}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Right: Notifications Bell with Badge */}
-        <TouchableOpacity
-          onPress={onNotificationPress}
-          activeOpacity={0.7}
-          style={styles.notificationButton}
-          className="w-10 h-10 items-center justify-center rounded-full relative"
-          accessibilityLabel="Notifications"
-          accessibilityRole="button"
-        >
-          <Bell size={22} color="#FFFFFF" strokeWidth={2.2} />
-          {unreadNotifications ? (
-            <View style={styles.notificationDot} className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-400 rounded-full border border-blue-700" />
+        {/* Right Actions */}
+        <View style={styles.rightActions}>
+          {onLocationPress ? (
+            <TouchableOpacity
+              onPress={onLocationPress}
+              activeOpacity={0.7}
+              style={styles.locationButton}
+              accessibilityLabel="Afficher les localisations"
+              accessibilityRole="button"
+            >
+              <MapPin size={18} color="#FFFFFF" strokeWidth={2.2} />
+            </TouchableOpacity>
           ) : null}
-        </TouchableOpacity>
+
+          {/* Right: Notifications Bell with Badge */}
+          <TouchableOpacity
+            onPress={onNotificationPress}
+            activeOpacity={0.7}
+            style={styles.notificationButton}
+            className="w-10 h-10 items-center justify-center rounded-full relative"
+            accessibilityLabel="Notifications"
+            accessibilityRole="button"
+          >
+            <Bell size={22} color="#FFFFFF" strokeWidth={2.2} />
+            {unreadNotifications ? (
+              <View style={styles.notificationDot} className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-400 rounded-full border border-blue-700" />
+            ) : null}
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -118,11 +149,32 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.3,
   },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  pinIcon: {
+    marginRight: 3,
+  },
   subtitleText: {
     color: '#dbeafe',
     fontSize: 12,
     fontWeight: '500',
-    marginTop: 1,
+  },
+  rightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  locationButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    marginRight: 4,
   },
   notificationButton: {
     width: 40,

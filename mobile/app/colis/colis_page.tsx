@@ -6,85 +6,60 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Modal,
-  Alert,
+  SafeAreaView,
+  Image,
+  Linking,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-export interface Colis {
-  id: string;
-  senderName: string;
-  senderPhone: string;
-  receiverName: string;
-  receiverPhone: string;
-  fromCity: string;
-  toCity: string;
-  weight: number; // in kg
-  price: number; // in EUR
-  status: 'pending' | 'in_transit' | 'delivered';
-  date: string;
-  description: string;
-}
+import CreateColis, { Colis } from './create-colis';
+import ViewColis from './view_colis';
+import UpdateColis from './update_colis';
 
-interface ColisPageProps {
+export { Colis };
+
+export interface ColisPageProps {
   direction: 'FR_TO_MA' | 'MA_TO_FR';
   colisList: Colis[];
   onAddColis: (colis: Colis) => void;
+  onUpdateColis?: (updatedColis: Colis) => void;
 }
 
-export default function ColisPage({ direction, colisList, onAddColis }: ColisPageProps) {
+const DEFAULT_PARCEL_IMAGE = 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=500';
+export default function ColisPage({
+  direction,
+  colisList,
+  onAddColis,
+  onUpdateColis,
+}: ColisPageProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'in_transit' | 'delivered'>('all');
-  const [selectedColis, setSelectedColis] = useState<Colis | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [cityFilter, setCityFilter] = useState('all');
+  // Modal States
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [viewColis, setViewColis] = useState<Colis | null>(null);
+  const [editColis, setEditColis] = useState<Colis | null>(null);
 
-  // Add Form States
-  const [senderName, setSenderName] = useState('');
-  const [senderPhone, setSenderPhone] = useState('');
-  const [receiverName, setReceiverName] = useState('');
-  const [receiverPhone, setReceiverPhone] = useState('');
-  const [fromCity, setFromCity] = useState('');
-  const [toCity, setToCity] = useState('');
-  const [weight, setWeight] = useState('');
-  const [price, setPrice] = useState('');
-  const [description, setDescription] = useState('');
+  const [statusMenuVisible, setStatusMenuVisible] = useState(false);
+  const [cityMenuVisible, setCityMenuVisible] = useState(false);
 
-  const handleAddSubmit = () => {
-    if (!senderName || !receiverName || !fromCity || !toCity || !weight || !price) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
+
+  const handleUpdate = (updated: Colis) => {
+    if (onUpdateColis) {
+      onUpdateColis(updated);
     }
-
-    const newColis: Colis = {
-      id: `CX-${Math.floor(1000 + Math.random() * 9000)}`,
-      senderName,
-      senderPhone: senderPhone || '+33 6 1234 5678',
-      receiverName,
-      receiverPhone: receiverPhone || '+212 6 1234 5678',
-      fromCity,
-      toCity,
-      weight: parseFloat(weight) || 1,
-      price: parseFloat(price) || 10,
-      status: 'pending',
-      date: new Date().toLocaleDateString('fr-FR'),
-      description: description || 'No description',
-    };
-
-    onAddColis(newColis);
-    setShowAddModal(false);
-    
-    // Reset Form
-    setSenderName('');
-    setSenderPhone('');
-    setReceiverName('');
-    setReceiverPhone('');
-    setFromCity('');
-    setToCity('');
-    setWeight('');
-    setPrice('');
-    setDescription('');
+    if (viewColis && viewColis.id === updated.id) {
+      setViewColis(updated);
+    }
   };
 
+  const handleStatusQuickChange = (colisId: string, newStatus: Colis['status']) => {
+    const itemToUpdate = colisList.find((c) => c.id === colisId);
+    if (itemToUpdate) {
+      const updated = { ...itemToUpdate, status: newStatus };
+      handleUpdate(updated);
+    }
+  };
+  const cities = ['all', ...Array.from(new Set(colisList.flatMap(c => [c.toCity, c.fromCity]).filter(Boolean)))];
   const filteredColis = colisList.filter((item) => {
     const matchesSearch =
       item.id.toLowerCase().includes(search.toLowerCase()) ||
@@ -93,9 +68,13 @@ export default function ColisPage({ direction, colisList, onAddColis }: ColisPag
       item.fromCity.toLowerCase().includes(search.toLowerCase()) ||
       item.toCity.toLowerCase().includes(search.toLowerCase());
 
-    const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
+    const matchesStatus =
+      statusFilter === 'all' || item.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    const matchesCity =
+      cityFilter === 'all' || item.toCity === cityFilter || item.fromCity === cityFilter;
+
+    return matchesSearch && matchesStatus && matchesCity;
   });
 
   const getStatusStyle = (status: Colis['status']) => {
@@ -114,7 +93,7 @@ export default function ColisPage({ direction, colisList, onAddColis }: ColisPag
       case 'pending':
         return '⏳ Pending';
       case 'in_transit':
-        return '🚚 In Transit';
+        return '🚚 Transit';
       case 'delivered':
         return '✅ Delivered';
     }
@@ -130,266 +109,278 @@ export default function ColisPage({ direction, colisList, onAddColis }: ColisPag
             {direction === 'FR_TO_MA' ? '🇫🇷 France ➔ 🇲🇦 Morocco' : '🇲🇦 Morocco ➔ 🇫🇷 France'}
           </Text>
         </View>
-        <TouchableOpacity style={styles.addButton} onPress={() => setShowAddModal(true)}>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => setShowCreateModal(true)}
+          activeOpacity={0.85}
+        >
           <Text style={styles.addButtonText}>➕ New Colis</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Search Input */}
+      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <Text style={styles.searchIcon}>🔍</Text>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search by tracking, sender, receiver..."
+          placeholder="Search parcels..."
           placeholderTextColor="#94a3b8"
           value={search}
           onChangeText={setSearch}
         />
-      </View>
-
-      {/* Filter Tabs */}
-      <View style={styles.filterContainer}>
-        {(['all', 'pending', 'in_transit', 'delivered'] as const).map((filter) => (
-          <TouchableOpacity
-            key={filter}
-            style={[styles.filterTab, statusFilter === filter && styles.activeFilterTab]}
-            onPress={() => setStatusFilter(filter)}
-          >
-            <Text style={[styles.filterTabText, statusFilter === filter && styles.activeFilterTabText]}>
-              {filter.charAt(0).toUpperCase() + filter.slice(1)}
-            </Text>
+        {search ? (
+          <TouchableOpacity onPress={() => setSearch('')} style={styles.clearSearchBtn}>
+            <Text style={styles.clearSearchText}>✕</Text>
           </TouchableOpacity>
-        ))}
+        ) : null}
       </View>
 
-      {/* Colis List */}
-      <ScrollView contentContainerStyle={styles.listContainer} showsVerticalScrollIndicator={false}>
+      {/* Filter Row: Status (left) & City (right) */}
+      <View style={styles.filterRow}>
+        {/* Status Dropdown */}
+        <View style={styles.dropdownWrapper}>
+          <Text style={styles.dropdownLabel}>Status</Text>
+          <TouchableOpacity
+            style={[styles.dropdownToggle, statusMenuVisible && styles.dropdownToggleActive]}
+            onPress={() => {
+              setStatusMenuVisible(!statusMenuVisible);
+              setCityMenuVisible(false);
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.dropdownToggleText}>
+              {statusFilter === 'all'
+                ? `All (${colisList.length})`
+                : statusFilter === 'pending'
+                  ? `⏳ Pending (${colisList.filter(c => c.status === 'pending').length})`
+                  : statusFilter === 'in_transit'
+                    ? `🚚 Transit (${colisList.filter(c => c.status === 'in_transit').length})`
+                    : `✅ Delivered (${colisList.filter(c => c.status === 'delivered').length})`}
+            </Text>
+            <Text style={styles.dropdownChevron}>{statusMenuVisible ? '▲' : '▼'}</Text>
+          </TouchableOpacity>
+          {statusMenuVisible && (
+            <View style={styles.dropdownMenu}>
+              {(['all', 'pending', 'in_transit', 'delivered'] as const).map((filter) => {
+                const isActive = statusFilter === filter;
+                const count = filter === 'all'
+                  ? colisList.length
+                  : colisList.filter(c => c.status === filter).length;
+                const label = filter === 'all' ? 'All' : filter === 'pending' ? '⏳ Pending' : filter === 'in_transit' ? '🚚 Transit' : '✅ Delivered';
+                return (
+                  <TouchableOpacity
+                    key={filter}
+                    style={[styles.dropdownItem, isActive && styles.dropdownItemActive]}
+                    onPress={() => {
+                      setStatusFilter(filter);
+                      setStatusMenuVisible(false);
+                    }}
+                  >
+                    <Text style={[styles.dropdownItemText, isActive && styles.dropdownItemTextActive]}>
+                      {label} ({count})
+                    </Text>
+                    {isActive && <Text style={styles.dropdownCheck}>✓</Text>}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+        </View>
+
+        {/* City Dropdown */}
+        <View style={styles.dropdownWrapper}>
+          <Text style={styles.dropdownLabel}>City</Text>
+          <TouchableOpacity
+            style={[styles.dropdownToggle, cityMenuVisible && styles.dropdownToggleActive]}
+            onPress={() => {
+              setCityMenuVisible(!cityMenuVisible);
+              setStatusMenuVisible(false);
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.dropdownToggleText}>
+              {cityFilter === 'all' ? 'All Cities' : cityFilter}
+            </Text>
+            <Text style={styles.dropdownChevron}>{cityMenuVisible ? '▲' : '▼'}</Text>
+          </TouchableOpacity>
+          {cityMenuVisible && (
+            <View style={styles.dropdownMenu}>
+              {cities.map((city) => {
+                const isActive = cityFilter === city;
+                return (
+                  <TouchableOpacity
+                    key={city}
+                    style={[styles.dropdownItem, isActive && styles.dropdownItemActive]}
+                    onPress={() => {
+                      setCityFilter(city);
+                      setCityMenuVisible(false);
+                    }}
+                  >
+                    <Text style={[styles.dropdownItemText, isActive && styles.dropdownItemTextActive]}>
+                      {city === 'all' ? 'All Cities' : city}
+                    </Text>
+                    {isActive && <Text style={styles.dropdownCheck}>✓</Text>}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* 2-by-2 Grid Layout of Colis Cards */}
+      <ScrollView contentContainerStyle={styles.listScrollContent} showsVerticalScrollIndicator={false}>
         {filteredColis.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyIcon}>📦</Text>
             <Text style={styles.emptyText}>No parcels found</Text>
-            <Text style={styles.emptySubtext}>Try adjusting your filters or search term</Text>
+            <Text style={styles.emptySubtext}>Try adjusting your search query or filter</Text>
           </View>
         ) : (
-          filteredColis.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.colisCard}
-              onPress={() => setSelectedColis(item)}
-              activeOpacity={0.8}
-            >
-              <View style={styles.cardHeader}>
-                <Text style={styles.trackingId}>{item.id}</Text>
-                <View style={[styles.statusBadge, getStatusStyle(item.status)]}>
-                  <Text style={styles.statusText}>{getStatusLabel(item.status)}</Text>
-                </View>
-              </View>
-
-              <View style={styles.cardBody}>
-                <View style={styles.routeContainer}>
-                  <View style={styles.routePoint}>
-                    <Text style={styles.routeCity}>{item.fromCity}</Text>
-                    <Text style={styles.routeLabel}>Sender: {item.senderName}</Text>
+          <View style={styles.gridTwoByTwoContainer}>
+            {filteredColis.map((item) => {
+              const isPaid = item.isPaid !== false;
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.gridCard}
+                  onPress={() => setViewColis(item)}
+                  activeOpacity={0.85}
+                >
+                  {/* Parcel Image Header */}
+                  <View style={styles.cardImageWrapper}>
+                    <Image
+                      source={{ uri: item.image || DEFAULT_PARCEL_IMAGE }}
+                      style={styles.cardImage}
+                    />
+                    {/* WhatsApp button - top right of image */}
+                    <TouchableOpacity
+                      style={styles.whatsappButton}
+                      onPress={() => {
+                        const phone = item.receiverPhone.replace(/[^\d+]/g, '');
+                        const msg = encodeURIComponent(`Bonjour ${item.receiverName}, votre colis ${item.id} est en route!`);
+                        Linking.openURL(`https://wa.me/${phone}?text=${msg}`);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.whatsappIcon}>💬</Text>
+                    </TouchableOpacity>
+                    <View style={styles.cardImageOverlay}>
+                      <Text style={styles.trackingIdTag}>{item.id}</Text>
+                      <View style={[styles.statusBadge, getStatusStyle(item.status)]}>
+                        <Text style={styles.statusText}>{getStatusLabel(item.status)}</Text>
+                      </View>
+                    </View>
                   </View>
-                  <Text style={styles.routeArrow}>➔</Text>
-                  <View style={styles.routePoint}>
-                    <Text style={styles.routeCity}>{item.toCity}</Text>
-                    <Text style={styles.routeLabel}>Receiver: {item.receiverName}</Text>
-                  </View>
-                </View>
-              </View>
 
-              <View style={styles.cardFooter}>
-                <View style={styles.footerMetric}>
-                  <Text style={styles.metricLabel}>Weight</Text>
-                  <Text style={styles.metricValue}>{item.weight} kg</Text>
-                </View>
-                <View style={styles.footerMetric}>
-                  <Text style={styles.metricLabel}>Price</Text>
-                  <Text style={styles.metricValue}>{item.price} €</Text>
-                </View>
-                <View style={styles.footerMetric}>
-                  <Text style={styles.metricLabel}>Date</Text>
-                  <Text style={styles.metricValue}>{item.date}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))
+                  {/* Card Body */}
+                  <View style={styles.cardContent}>
+                    {/* Payment tag */}
+                    <View style={styles.paymentTagRow}>
+                      <View style={[styles.paidChip, isPaid ? styles.paidChipSuccess : styles.paidChipDanger]}>
+                        <Text style={[styles.paidChipText, isPaid ? styles.paidTextSuccess : styles.paidTextDanger]}>
+                          {isPaid ? '🟢 Payé' : '🔴 Non Payé'}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Route
+                    <View style={styles.routeHeader}>
+                      <Text style={styles.routeCityText} numberOfLines={1}>
+                        {item.fromCity}
+                      </Text>
+                      <Text style={styles.routeArrowText}>➔</Text>
+                      <Text style={styles.routeCityText} numberOfLines={1}>
+                        {item.toCity}
+                      </Text>
+                    </View> */}
+
+                    {/* Sender (left) & Receiver (right) */}
+                    <View style={styles.senderReceiverRow}>
+                      {/* Sender - Left Side */}
+                      <View style={styles.personColumn}>
+                        <Text style={styles.personName} numberOfLines={1}>{item.senderName}</Text>
+                        <Text style={styles.personDetail} numberOfLines={1}>📍 {item.fromCity}</Text>
+                        <Text style={styles.personDetail} numberOfLines={1}>📞 {item.senderPhone}</Text>
+                      </View>
+                      {/* Divider */}
+                      <View style={styles.personDivider} />
+                      {/* Receiver - Right Side */}
+                      <View style={styles.personColumn}>
+                        <Text style={styles.personName} numberOfLines={1}>{item.receiverName}</Text>
+                        <Text style={styles.personDetail} numberOfLines={1}>📍 {item.toCity}</Text>
+                        <Text style={styles.personDetail} numberOfLines={1}>📞 {item.receiverPhone}</Text>
+                      </View>
+                    </View>
+
+                    {/* Specs footer */}
+                    <View style={styles.cardFooterGrid}>
+                      <View style={styles.miniMetric}>
+                        <Text style={styles.miniMetricLabel}>Qty</Text>
+                        <Text style={styles.miniMetricVal}>{item.quantity ?? 1}</Text>
+                      </View>
+                      <View style={styles.miniMetricDivider} />
+                      <View style={styles.miniMetric}>
+                        <Text style={styles.miniMetricLabel}>Weight</Text>
+                        <Text style={styles.miniMetricVal}>{item.weight} kg</Text>
+                      </View>
+                      <View style={styles.miniMetricDivider} />
+                      <View style={styles.miniMetric}>
+                        <Text style={styles.miniMetricLabel}>Price</Text>
+                        <Text style={styles.miniMetricValHighlight}>{item.price} MAD</Text>
+                      </View>
+                    </View>
+
+                    {/* Action Buttons */}
+                    <View style={styles.cardActionRow}>
+                      <TouchableOpacity
+                        style={styles.viewActionBtn}
+                        onPress={() => setViewColis(item)}
+                      >
+                        <Text style={styles.viewActionText}>👁️ View</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.editActionBtn}
+                        onPress={() => setEditColis(item)}
+                      >
+                        <Text style={styles.editActionText}>✏️ Edit</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         )}
       </ScrollView>
 
-      {/* Details Modal */}
-      {selectedColis && (
-        <Modal visible={true} transparent={true} animationType="slide" onRequestClose={() => setSelectedColis(null)}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Colis Details</Text>
-                <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedColis(null)}>
-                  <Text style={styles.closeButtonText}>✕</Text>
-                </TouchableOpacity>
-              </View>
+      {/* --- SEPARATE MODALS --- */}
+      <CreateColis
+        visible={showCreateModal}
+        direction={direction}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={onAddColis}
+      />
 
-              <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-                <View style={styles.modalSection}>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Tracking Number</Text>
-                    <Text style={styles.detailValueHighlight}>{selectedColis.id}</Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Status</Text>
-                    <View style={[styles.statusBadge, getStatusStyle(selectedColis.status)]}>
-                      <Text style={styles.statusText}>{getStatusLabel(selectedColis.status)}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Registered Date</Text>
-                    <Text style={styles.detailValue}>{selectedColis.date}</Text>
-                  </View>
-                </View>
+      <ViewColis
+        visible={!!viewColis}
+        colis={viewColis}
+        onClose={() => setViewColis(null)}
+        onEdit={(colisToEdit) => {
+          setViewColis(null);
+          setEditColis(colisToEdit);
+        }}
+        onStatusChange={handleStatusQuickChange}
+      />
 
-                <View style={styles.modalSection}>
-                  <Text style={styles.sectionTitle}>Route & Address</Text>
-                  <View style={styles.routeStep}>
-                    <Text style={styles.stepDot}>🟢</Text>
-                    <View style={styles.stepContent}>
-                      <Text style={styles.stepTitle}>Origin</Text>
-                      <Text style={styles.stepCity}>{selectedColis.fromCity}</Text>
-                      <Text style={styles.stepSub}>{selectedColis.senderName} • {selectedColis.senderPhone}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.routeStep}>
-                    <Text style={styles.stepDot}>🔴</Text>
-                    <View style={styles.stepContent}>
-                      <Text style={styles.stepTitle}>Destination</Text>
-                      <Text style={styles.stepCity}>{selectedColis.toCity}</Text>
-                      <Text style={styles.stepSub}>{selectedColis.receiverName} • {selectedColis.receiverPhone}</Text>
-                    </View>
-                  </View>
-                </View>
-
-                <View style={styles.modalSection}>
-                  <Text style={styles.sectionTitle}>Specifications</Text>
-                  <View style={styles.specGrid}>
-                    <View style={styles.specItem}>
-                      <Text style={styles.specLabel}>Weight</Text>
-                      <Text style={styles.specValue}>{selectedColis.weight} kg</Text>
-                    </View>
-                    <View style={styles.specItem}>
-                      <Text style={styles.specLabel}>Price Paid</Text>
-                      <Text style={styles.specValue}>{selectedColis.price} €</Text>
-                    </View>
-                  </View>
-                  <View style={styles.descriptionBox}>
-                    <Text style={styles.specLabel}>Contents Description</Text>
-                    <Text style={styles.descriptionText}>{selectedColis.description}</Text>
-                  </View>
-                </View>
-              </ScrollView>
-            </View>
-          </View>
-        </Modal>
-      )}
-
-      {/* Add Colis Modal */}
-      <Modal visible={showAddModal} transparent={true} animationType="slide" onRequestClose={() => setShowAddModal(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContentLarge}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Register New Colis</Text>
-              <TouchableOpacity style={styles.closeButton} onPress={() => setShowAddModal(false)}>
-                <Text style={styles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              <Text style={styles.formSectionTitle}>Sender Details</Text>
-              <TextInput
-                style={styles.formInput}
-                placeholder="Sender Name *"
-                placeholderTextColor="#94a3b8"
-                value={senderName}
-                onChangeText={setSenderName}
-              />
-              <TextInput
-                style={styles.formInput}
-                placeholder="Sender Phone Number"
-                placeholderTextColor="#94a3b8"
-                keyboardType="phone-pad"
-                value={senderPhone}
-                onChangeText={setSenderPhone}
-              />
-
-              <Text style={styles.formSectionTitle}>Receiver Details</Text>
-              <TextInput
-                style={styles.formInput}
-                placeholder="Receiver Name *"
-                placeholderTextColor="#94a3b8"
-                value={receiverName}
-                onChangeText={setReceiverName}
-              />
-              <TextInput
-                style={styles.formInput}
-                placeholder="Receiver Phone Number"
-                placeholderTextColor="#94a3b8"
-                keyboardType="phone-pad"
-                value={receiverPhone}
-                onChangeText={setReceiverPhone}
-              />
-
-              <Text style={styles.formSectionTitle}>Route Details</Text>
-              <TextInput
-                style={styles.formInput}
-                placeholder={direction === 'FR_TO_MA' ? 'Origin City (e.g., Paris) *' : 'Origin City (e.g., Casablanca) *'}
-                placeholderTextColor="#94a3b8"
-                value={fromCity}
-                onChangeText={setFromCity}
-              />
-              <TextInput
-                style={styles.formInput}
-                placeholder={direction === 'FR_TO_MA' ? 'Destination City (e.g., Marrakech) *' : 'Destination City (e.g., Lyon) *'}
-                placeholderTextColor="#94a3b8"
-                value={toCity}
-                onChangeText={setToCity}
-              />
-
-              <Text style={styles.formSectionTitle}>Package Specs</Text>
-              <View style={styles.specInputRow}>
-                <TextInput
-                  style={[styles.formInput, { flex: 1, marginRight: 8 }]}
-                  placeholder="Weight (kg) *"
-                  placeholderTextColor="#94a3b8"
-                  keyboardType="numeric"
-                  value={weight}
-                  onChangeText={setWeight}
-                />
-                <TextInput
-                  style={[styles.formInput, { flex: 1 }]}
-                  placeholder="Price (€) *"
-                  placeholderTextColor="#94a3b8"
-                  keyboardType="numeric"
-                  value={price}
-                  onChangeText={setPrice}
-                />
-              </View>
-
-              <TextInput
-                style={[styles.formInput, styles.textArea]}
-                placeholder="Package Contents / Description"
-                placeholderTextColor="#94a3b8"
-                multiline={true}
-                numberOfLines={3}
-                value={description}
-                onChangeText={setDescription}
-              />
-
-              <TouchableOpacity style={styles.formSubmitButton} onPress={handleAddSubmit}>
-                <Text style={styles.formSubmitText}>Create Shipment</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      <UpdateColis
+        visible={!!editColis}
+        colis={editColis}
+        direction={direction}
+        onClose={() => setEditColis(null)}
+        onSubmit={handleUpdate}
+      />
     </SafeAreaView>
   );
 }
@@ -397,23 +388,23 @@ export default function ColisPage({ direction, colisList, onAddColis }: ColisPag
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a', // deep premium dark background
+    backgroundColor: '#0f172a',
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 15,
-    paddingBottom: 10,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
     color: '#f8fafc',
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#38bdf8',
     fontWeight: '600',
     marginTop: 2,
@@ -422,7 +413,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#3b82f6',
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: 10,
     shadowColor: '#3b82f6',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -431,14 +422,14 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     color: '#fff',
-    fontWeight: '700',
-    fontSize: 13,
+    fontWeight: '800',
+    fontSize: 12,
   },
   searchContainer: {
     flexDirection: 'row',
     backgroundColor: '#1e293b',
-    marginHorizontal: 20,
-    marginVertical: 10,
+    marginHorizontal: 16,
+    marginVertical: 8,
     borderRadius: 10,
     paddingHorizontal: 12,
     alignItems: 'center',
@@ -446,136 +437,354 @@ const styles = StyleSheet.create({
     borderColor: '#334155',
   },
   searchIcon: {
-    fontSize: 16,
+    fontSize: 14,
     marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    height: 40,
+    height: 38,
     color: '#f8fafc',
-    fontSize: 14,
+    fontSize: 13,
   },
-  filterContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginVertical: 5,
+  clearSearchBtn: {
+    padding: 4,
   },
-  filterTab: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 6,
-    backgroundColor: '#1e293b',
-  },
-  activeFilterTab: {
-    backgroundColor: '#f59e0b', // Warm amber accent
-  },
-  filterTabText: {
+  clearSearchText: {
     color: '#94a3b8',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  activeFilterTabText: {
-    color: '#0f172a',
+    fontSize: 13,
     fontWeight: '700',
   },
-  listContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 30,
+  filterRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    marginBottom: 6,
+    gap: 8,
   },
-  colisCard: {
+  dropdownWrapper: {
+    flex: 1,
+    zIndex: 10,
+  },
+  dropdownLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#64748b',
+    marginBottom: 3,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  dropdownToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: '#1e293b',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
     borderWidth: 1,
     borderColor: '#334155',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  dropdownToggleActive: {
+    borderColor: '#38bdf8',
+    backgroundColor: '#1a2744',
+  },
+  dropdownToggleText: {
+    color: '#f8fafc',
+    fontSize: 11,
+    fontWeight: '600',
+    flex: 1,
+  },
+  dropdownChevron: {
+    color: '#94a3b8',
+    fontSize: 8,
+    marginLeft: 4,
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    marginTop: 2,
+    backgroundColor: '#1e293b',
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: 8,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+    zIndex: 100,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#293548',
+  },
+  dropdownItemActive: {
+    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+  },
+  dropdownItemText: {
+    color: '#cbd5e1',
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  dropdownItemTextActive: {
+    color: '#38bdf8',
+    fontWeight: '700',
+  },
+  dropdownCheck: {
+    color: '#38bdf8',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  listScrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 40,
+  },
+  // 2-by-2 Grid Layout Styles
+  gridTwoByTwoContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  gridCard: {
+    width: '48.5%', // Two side-by-side per row
+    backgroundColor: '#1e293b',
+    borderRadius: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 3,
   },
-  cardHeader: {
+  whatsappButton: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    backgroundColor: '#25D366',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  whatsappIcon: {
+    fontSize: 14,
+  },
+  cardImageWrapper: {
+    height: 95,
+    width: '100%',
+    position: 'relative',
+  },
+  cardImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  cardImageOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    paddingHorizontal: 6,
+    paddingVertical: 4,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#334155',
-    paddingBottom: 10,
-    marginBottom: 10,
   },
-  trackingId: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#f8fafc',
+  trackingIdTag: {
+    color: '#38bdf8',
+    fontSize: 11,
+    fontWeight: '800',
   },
   statusBadge: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 6,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 4,
   },
   statusPending: {
-    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+    backgroundColor: 'rgba(245, 158, 11, 0.25)',
   },
   statusTransit: {
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    backgroundColor: 'rgba(59, 130, 246, 0.25)',
   },
   statusDelivered: {
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    backgroundColor: 'rgba(16, 185, 129, 0.25)',
   },
   statusText: {
-    fontSize: 11,
+    fontSize: 9,
     fontWeight: '700',
     color: '#fff',
   },
-  cardBody: {
-    marginBottom: 12,
+  cardContent: {
+    padding: 8,
   },
-  routeContainer: {
+  paymentTagRow: {
+    marginBottom: 4,
+  },
+  paidChip: {
+    alignSelf: 'flex-start',
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 4,
+  },
+  paidChipSuccess: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+  },
+  paidChipDanger: {
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+  },
+  paidChipText: {
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  paidTextSuccess: {
+    color: '#10b981',
+  },
+  paidTextDanger: {
+    color: '#ef4444',
+  },
+  routeHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 4,
   },
-  routePoint: {
+  routeCityText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#f8fafc',
     flex: 1,
   },
-  routeCity: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#f8fafc',
-  },
-  routeLabel: {
+  routeArrowText: {
     fontSize: 11,
-    color: '#94a3b8',
-    marginTop: 2,
-  },
-  routeArrow: {
-    fontSize: 18,
     color: '#38bdf8',
-    paddingHorizontal: 10,
+    marginHorizontal: 2,
   },
-  cardFooter: {
+  senderReceiverRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     backgroundColor: '#0f172a',
-    padding: 10,
-    borderRadius: 8,
+    borderRadius: 6,
+    padding: 6,
+    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
-  footerMetric: {
+  personColumn: {
+    flex: 1,
+  },
+  personColumnLabel: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#38bdf8',
+    marginBottom: 2,
+    textTransform: 'uppercase',
+  },
+  personName: {
+    fontSize: 8,
+    fontWeight: '700',
+    color: '#f8fafc',
+    marginBottom: 1,
+  },
+  personDetail: {
+    fontSize: 7,
+    color: '#94a3b8',
+    fontWeight: '500',
+  },
+  personDivider: {
+    width: 1,
+    backgroundColor: '#334155',
+    marginHorizontal: 6,
+  },
+  cardFooterGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: '#0f172a',
+    padding: 6,
+    borderRadius: 6,
+    marginVertical: 4,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
-  metricLabel: {
-    fontSize: 10,
+  miniMetricDivider: {
+    width: 1,
+    height: '80%',
+    backgroundColor: '#334155',
+  },
+  miniMetric: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  miniMetricLabel: {
+    fontSize: 8,
     color: '#64748b',
     fontWeight: '600',
   },
-  metricValue: {
-    fontSize: 12,
+  miniMetricVal: {
+    fontSize: 7,
     fontWeight: '700',
     color: '#f8fafc',
+    marginTop: 1,
+  },
+  miniMetricValHighlight: {
+    fontSize: 7,
+    fontWeight: '800',
+    color: '#38bdf8',
+    marginTop: 1,
+  },
+  cardActionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: 2,
+  },
+  viewActionBtn: {
+    flex: 1,
+    backgroundColor: '#0f172a',
+    paddingVertical: 5,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginRight: 3,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  viewActionText: {
+    fontSize: 10,
+    color: '#38bdf8',
+    fontWeight: '700',
+  },
+  editActionBtn: {
+    flex: 1,
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    paddingVertical: 5,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginLeft: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.3)',
+  },
+  editActionText: {
+    fontSize: 10,
+    color: '#f59e0b',
+    fontWeight: '700',
   },
   emptyContainer: {
     alignItems: 'center',
@@ -595,187 +804,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#94a3b8',
     marginTop: 4,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.75)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#1e293b',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    maxHeight: '80%',
-    borderColor: '#334155',
-    borderWidth: 1,
-  },
-  modalContentLarge: {
-    backgroundColor: '#1e293b',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    height: '90%',
-    borderColor: '#334155',
-    borderWidth: 1,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#334155',
-    paddingBottom: 15,
-    marginBottom: 15,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#f8fafc',
-  },
-  closeButton: {
-    padding: 4,
-  },
-  closeButtonText: {
-    fontSize: 18,
-    color: '#94a3b8',
-    fontWeight: '600',
-  },
-  modalBody: {
-    marginBottom: 10,
-  },
-  modalSection: {
-    marginBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#334155',
-    paddingBottom: 15,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  detailLabel: {
-    fontSize: 13,
-    color: '#94a3b8',
-    fontWeight: '600',
-  },
-  detailValue: {
-    fontSize: 14,
-    color: '#f8fafc',
-    fontWeight: '600',
-  },
-  detailValueHighlight: {
-    fontSize: 15,
-    color: '#38bdf8',
-    fontWeight: '800',
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#f8fafc',
-    marginBottom: 12,
-  },
-  routeStep: {
-    flexDirection: 'row',
-    marginBottom: 15,
-  },
-  stepDot: {
-    fontSize: 14,
-    marginRight: 10,
-    marginTop: 2,
-  },
-  stepContent: {
-    flex: 1,
-  },
-  stepTitle: {
-    fontSize: 11,
-    color: '#64748b',
-    fontWeight: '600',
-  },
-  stepCity: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#f8fafc',
-    marginTop: 2,
-  },
-  stepSub: {
-    fontSize: 12,
-    color: '#94a3b8',
-    marginTop: 2,
-  },
-  specGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-  },
-  specItem: {
-    flex: 1,
-    backgroundColor: '#0f172a',
-    padding: 12,
-    borderRadius: 8,
-    marginRight: 8,
-    alignItems: 'center',
-  },
-  specLabel: {
-    fontSize: 11,
-    color: '#64748b',
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  specValue: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#38bdf8',
-  },
-  descriptionBox: {
-    backgroundColor: '#0f172a',
-    padding: 12,
-    borderRadius: 8,
-  },
-  descriptionText: {
-    color: '#f8fafc',
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  formSectionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#e2e8f0',
-    marginTop: 15,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-  },
-  formInput: {
-    backgroundColor: '#0f172a',
-    borderRadius: 8,
-    padding: 10,
-    color: '#f8fafc',
-    fontSize: 14,
-    borderWidth: 1,
-    borderColor: '#334155',
-    marginBottom: 10,
-  },
-  specInputRow: {
-    flexDirection: 'row',
-    marginBottom: 5,
-  },
-  textArea: {
-    height: 70,
-    textAlignVertical: 'top',
-  },
-  formSubmitButton: {
-    backgroundColor: '#10b981',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 40,
-  },
-  formSubmitText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '700',
   },
 });
