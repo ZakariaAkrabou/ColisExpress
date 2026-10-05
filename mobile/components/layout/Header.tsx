@@ -8,7 +8,7 @@ import {
   StatusBar,
   Image,
 } from 'react-native';
-import { Menu, Bell } from 'lucide-react-native';
+import { Bell } from 'lucide-react-native';
 
 export interface HeaderProps {
   direction?: 'MA_TO_FR' | 'FR_TO_MA';
@@ -21,7 +21,6 @@ export interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   direction = 'MA_TO_FR',
-  onMenuPress,
   onNotificationPress,
   unreadNotifications = true,
   title = 'ColisExpress',
@@ -33,20 +32,8 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <View style={styles.headerWrapper} className="bg-blue-700 pt-3 pb-3 px-4 shadow-md">
       <View style={styles.headerContainer} className="flex-row items-center justify-between">
-        {/* Left: Hamburger Menu Button */}
-        <TouchableOpacity
-          onPress={onMenuPress}
-          activeOpacity={0.7}
-          style={styles.iconButton}
-          className="w-10 h-10 items-center justify-center rounded-full"
-          accessibilityLabel="Menu principal"
-          accessibilityRole="button"
-        >
-          <Menu size={24} color="#FFFFFF" strokeWidth={2.2} />
-        </TouchableOpacity>
-
-        {/* Center: Brand Logo & Title */}
-        <View style={styles.brandContainer} className="flex-row items-center space-x-2.5 flex-1 ml-2">
+        {/* Left: Brand Logo & Title */}
+        <View style={styles.brandContainer} className="flex-row items-center space-x-2.5 flex-1">
           <View style={styles.logoBadge}>
             <Image
               source={require('../../assets/logo.jpeg')}
@@ -97,22 +84,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  iconButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 20,
-  },
   brandContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    marginLeft: 8,
   },
   logoBadge: {
-    width: 42,
-    height: 42,
+    width: 44,
+    height: 44,
     borderRadius: 14,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
@@ -130,7 +109,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   titleContainer: {
-    marginLeft: 10,
+    marginLeft: 12,
     justifyContent: 'center',
   },
   titleText: {
