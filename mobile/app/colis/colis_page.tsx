@@ -7,9 +7,9 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
-  SafeAreaView,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export interface Colis {
   id: string;

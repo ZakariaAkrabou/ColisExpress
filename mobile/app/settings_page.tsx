@@ -6,9 +6,9 @@ import {
   TouchableOpacity,
   ScrollView,
   Switch,
-  SafeAreaView,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface SettingsPageProps {
   direction: 'FR_TO_MA' | 'MA_TO_FR';
