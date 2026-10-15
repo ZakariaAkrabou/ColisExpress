@@ -34,11 +34,7 @@ function getPrintCSS(): string {
       }
 
       .city-page {
-        padding: 0 0 20px 0;
-        min-height: 98vh;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
+        padding: 0 0 10px 0;
       }
 
       .page-break {
@@ -404,23 +400,6 @@ function renderSingleCityPageHTML(
           </tbody>
         </table>
       </div>
-
-      <!-- Signatures & Page Footer -->
-      <div>
-        <div class="summary-section">
-          <div class="signature-box">
-            Signature & Nom du Chauffeur / Livreur
-          </div>
-          <div class="signature-box">
-            Visa / Tampon de l'Agence (${group.city})
-          </div>
-        </div>
-
-        <div class="footer-bar">
-          <div>ColisExpress - Gestionnaire de transport logistique Maroc - France</div>
-          <div>Page ${pageIndex} sur ${totalPages} (${group.city} - ${group.count} colis)</div>
-        </div>
-      </div>
     </div>
   `;
 }
@@ -621,10 +600,6 @@ export function generateSingleColisPrintHTML(colis: Colis): string {
           `
               : ''
           }
-
-          <div style="border-top: 1px dashed #cbd5e1; padding-top: 10px; text-align: center; font-size: 9px; color: #94a3b8;">
-            Conservez ce récépissé pour tout suivi ou réclamation. Service client ColisExpress.
-          </div>
         </div>
       </body>
     </html>
