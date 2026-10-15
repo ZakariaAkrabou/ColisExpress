@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { Package, MapPin, Home, Users, Settings } from 'lucide-react-native';
+import { Package, MapPin, Home, Users, Settings, FileText } from 'lucide-react-native';
 
-export type TabType = 'colis' | 'locations' | 'home' | 'clients' | 'settings' | 'more';
+export type TabType = 'colis' | 'docs' | 'locations' | 'home' | 'clients' | 'settings' | 'more';
 
 export interface FooterProps {
   activeTab: TabType;
@@ -23,7 +23,7 @@ export const Footer: React.FC<FooterProps> = ({
         activeOpacity={0.7}
       >
         <Package
-          size={22}
+          size={20}
           color={activeTab === 'colis' ? '#2563eb' : '#94a3b8'}
           strokeWidth={activeTab === 'colis' ? 2.4 : 1.8}
         />
@@ -37,24 +37,24 @@ export const Footer: React.FC<FooterProps> = ({
         </Text>
       </TouchableOpacity>
 
-      {/* 2. Second: Locations */}
+      {/* 2. Second: Docs */}
       <TouchableOpacity
         style={styles.tabItem}
-        onPress={() => onTabChange('locations')}
+        onPress={() => onTabChange('docs')}
         activeOpacity={0.7}
       >
-        <MapPin
-          size={22}
-          color={activeTab === 'locations' ? '#2563eb' : '#94a3b8'}
-          strokeWidth={activeTab === 'locations' ? 2.4 : 1.8}
+        <FileText
+          size={20}
+          color={activeTab === 'docs' ? '#2563eb' : '#94a3b8'}
+          strokeWidth={activeTab === 'docs' ? 2.4 : 1.8}
         />
         <Text
           style={[
             styles.tabLabel,
-            activeTab === 'locations' && styles.activeTabLabel,
+            activeTab === 'docs' && styles.activeTabLabel,
           ]}
         >
-          Locations
+          Docs
         </Text>
       </TouchableOpacity>
 
@@ -70,18 +70,39 @@ export const Footer: React.FC<FooterProps> = ({
           accessibilityLabel="Accueil"
           accessibilityRole="button"
         >
-          <Home size={24} color="#FFFFFF" strokeWidth={activeTab === 'home' ? 2.8 : 2.2} />
+          <Home size={22} color="#FFFFFF" strokeWidth={activeTab === 'home' ? 2.8 : 2.2} />
         </TouchableOpacity>
       </View>
 
-      {/* 4. Fourth: Clients */}
+      {/* 4. Fourth: Locations */}
+      <TouchableOpacity
+        style={styles.tabItem}
+        onPress={() => onTabChange('locations')}
+        activeOpacity={0.7}
+      >
+        <MapPin
+          size={20}
+          color={activeTab === 'locations' ? '#2563eb' : '#94a3b8'}
+          strokeWidth={activeTab === 'locations' ? 2.4 : 1.8}
+        />
+        <Text
+          style={[
+            styles.tabLabel,
+            activeTab === 'locations' && styles.activeTabLabel,
+          ]}
+        >
+          Locations
+        </Text>
+      </TouchableOpacity>
+
+      {/* 5. Fifth: Clients */}
       <TouchableOpacity
         style={styles.tabItem}
         onPress={() => onTabChange('clients')}
         activeOpacity={0.7}
       >
         <Users
-          size={22}
+          size={20}
           color={activeTab === 'clients' ? '#2563eb' : '#94a3b8'}
           strokeWidth={activeTab === 'clients' ? 2.4 : 1.8}
         />
@@ -92,27 +113,6 @@ export const Footer: React.FC<FooterProps> = ({
           ]}
         >
           Clients
-        </Text>
-      </TouchableOpacity>
-
-      {/* 5. Fifth: Settings */}
-      <TouchableOpacity
-        style={styles.tabItem}
-        onPress={() => onTabChange('settings')}
-        activeOpacity={0.7}
-      >
-        <Settings
-          size={22}
-          color={activeTab === 'settings' || activeTab === 'more' ? '#2563eb' : '#94a3b8'}
-          strokeWidth={activeTab === 'settings' || activeTab === 'more' ? 2.4 : 1.8}
-        />
-        <Text
-          style={[
-            styles.tabLabel,
-            (activeTab === 'settings' || activeTab === 'more') && styles.activeTabLabel,
-          ]}
-        >
-          Paramètres
         </Text>
       </TouchableOpacity>
     </View>

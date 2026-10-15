@@ -10,6 +10,7 @@ import {
   Alert,
   Image,
 } from 'react-native';
+import { Plus, X, ArrowLeft, ArrowRight, Check } from 'lucide-react-native';
 
 export interface Colis {
   id: string;
@@ -21,9 +22,9 @@ export interface Colis {
   toCity: string;
   quantity?: number;
   weight: number; // in kg
-  price: number; // in EUR
+  price: number; // in MAD
   isPaid?: boolean; // Payment status (true = Yes/Payed, false = No/Unpaid)
-  isADomicile?: boolean; //  (true = À domicile, false = Point de collecte)
+  isADomicile?: boolean; // (true = À domicile, false = Point de collecte)
   status: 'pending' | 'in_transit' | 'delivered';
   date: string;
   description: string;
@@ -100,7 +101,7 @@ export default function CreateColis({
 
   const handleNextStep1 = () => {
     if (!senderName.trim()) {
-      Alert.alert('Sender Required', 'Please enter the sender name to proceed.');
+      Alert.alert('Expéditeur obligatoire', 'Veuillez saisir le nom de l\'expéditeur pour continuer.');
       return;
     }
     setCurrentStep(2);
@@ -108,7 +109,7 @@ export default function CreateColis({
 
   const handleNextStep2 = () => {
     if (!receiverName.trim()) {
-      Alert.alert('Receiver Required', 'Please enter the receiver name to proceed.');
+      Alert.alert('Destinataire obligatoire', 'Veuillez saisir le nom du destinataire pour continuer.');
       return;
     }
     setCurrentStep(3);
@@ -116,16 +117,16 @@ export default function CreateColis({
 
   const handleFormSubmit = () => {
     if (!fromCity.trim() || !toCity.trim() || !weight.trim() || !price.trim()) {
-      Alert.alert('Missing Fields', 'Please fill in Origin, Destination, Weight and Price.');
+      Alert.alert('Champs obligatoires', 'Veuillez renseigner la ville de départ, la destination, le poids et le prix.');
       return;
     }
 
     const newColis: Colis = {
       id: `CX-${Math.floor(1000 + Math.random() * 9000)}`,
       senderName: senderName.trim(),
-      senderPhone: senderPhone.trim() || (direction === 'FR_TO_MA' ? '+33 6 1234 5678' : '+212 6 6123 4567'),
+      senderPhone: senderPhone.trim() || (direction === 'FR_TO_MA' ? '+33 6 12 34 56 78' : '+212 6 61 23 45 67'),
       receiverName: receiverName.trim(),
-      receiverPhone: receiverPhone.trim() || (direction === 'FR_TO_MA' ? '+212 6 6123 4567' : '+33 6 1234 5678'),
+      receiverPhone: receiverPhone.trim() || (direction === 'FR_TO_MA' ? '+212 6 61 23 45 67' : '+33 6 12 34 56 78'),
       fromCity: fromCity.trim(),
       toCity: toCity.trim(),
       quantity: parseInt(quantity, 10) || 1,
@@ -135,7 +136,7 @@ export default function CreateColis({
       isADomicile: isADomicile,
       status: 'pending',
       date: new Date().toLocaleDateString('fr-FR'),
-      description: description.trim() || 'No description provided',
+      description: description.trim() || 'Aucune description fournie',
       image: image || PRESET_IMAGES[0],
     };
 
@@ -156,11 +157,13 @@ export default function CreateColis({
           {/* Header */}
           <View style={styles.modalHeader}>
             <View style={styles.headerTitleContainer}>
-              <Text style={styles.modalIcon}>➕</Text>
-              <Text style={styles.modalTitle}>Register New Colis</Text>
+              <View style={styles.headerIconBadge}>
+                <Plus size={18} color="#2563eb" strokeWidth={2.4} />
+              </View>
+              <Text style={styles.modalTitle}>Enregistrer un Colis</Text>
             </View>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Text style={styles.closeButtonText}>✕</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose} activeOpacity={0.7}>
+              <X size={18} color="#64748b" />
             </TouchableOpacity>
           </View>
 
@@ -169,11 +172,12 @@ export default function CreateColis({
             <TouchableOpacity
               style={[styles.stepItem, currentStep === 1 && styles.stepItemActive]}
               onPress={() => setCurrentStep(1)}
+              activeOpacity={0.8}
             >
               <View style={[styles.stepNumberBadge, currentStep === 1 && styles.stepNumberBadgeActive]}>
                 <Text style={[styles.stepNumberText, currentStep === 1 && styles.stepNumberTextActive]}>1</Text>
               </View>
-              <Text style={[styles.stepLabel, currentStep === 1 && styles.stepLabelActive]}>Sender</Text>
+              <Text style={[styles.stepLabel, currentStep === 1 && styles.stepLabelActive]}>Expéditeur</Text>
             </TouchableOpacity>
 
             <View style={styles.stepDivider} />
@@ -182,13 +186,14 @@ export default function CreateColis({
               style={[styles.stepItem, currentStep === 2 && styles.stepItemActive]}
               onPress={() => {
                 if (senderName.trim()) setCurrentStep(2);
-                else Alert.alert('Notice', 'Please fill sender details first');
+                else Alert.alert('Attention', 'Veuillez d\'abord remplir les infos expéditeur');
               }}
+              activeOpacity={0.8}
             >
               <View style={[styles.stepNumberBadge, currentStep === 2 && styles.stepNumberBadgeActive]}>
                 <Text style={[styles.stepNumberText, currentStep === 2 && styles.stepNumberTextActive]}>2</Text>
               </View>
-              <Text style={[styles.stepLabel, currentStep === 2 && styles.stepLabelActive]}>Receiver</Text>
+              <Text style={[styles.stepLabel, currentStep === 2 && styles.stepLabelActive]}>Destinataire</Text>
             </TouchableOpacity>
 
             <View style={styles.stepDivider} />
@@ -197,13 +202,14 @@ export default function CreateColis({
               style={[styles.stepItem, currentStep === 3 && styles.stepItemActive]}
               onPress={() => {
                 if (senderName.trim() && receiverName.trim()) setCurrentStep(3);
-                else Alert.alert('Notice', 'Please fill sender and receiver details first');
+                else Alert.alert('Attention', 'Veuillez remplir expéditeur et destinataire d\'abord');
               }}
+              activeOpacity={0.8}
             >
               <View style={[styles.stepNumberBadge, currentStep === 3 && styles.stepNumberBadgeActive]}>
                 <Text style={[styles.stepNumberText, currentStep === 3 && styles.stepNumberTextActive]}>3</Text>
               </View>
-              <Text style={[styles.stepLabel, currentStep === 3 && styles.stepLabelActive]}>Colis Infos</Text>
+              <Text style={[styles.stepLabel, currentStep === 3 && styles.stepLabelActive]}>Colis</Text>
             </TouchableOpacity>
           </View>
 
@@ -211,45 +217,46 @@ export default function CreateColis({
             {/* Direction badge */}
             <View style={styles.directionBadge}>
               <Text style={styles.directionBadgeText}>
-                {direction === 'FR_TO_MA' ? '🇫🇷 France ➔ 🇲🇦 Morocco' : '🇲🇦 Morocco ➔ 🇫🇷 France'}
+                {direction === 'FR_TO_MA' ? '🇫🇷 France ➔ 🇲🇦 Maroc' : '🇲🇦 Maroc ➔ 🇫🇷 France'}
               </Text>
             </View>
 
             {/* STEP 1: SENDER DETAILS */}
             {currentStep === 1 && (
               <View style={styles.stepFormContent}>
-                <Text style={styles.formSectionTitle}>👤 Step 1: Sender Details</Text>
-                <Text style={styles.stepInstructionText}>Enter the contact details of the person sending this parcel.</Text>
+                <Text style={styles.formSectionTitle}>Étape 1 : Expéditeur</Text>
+                <Text style={styles.stepInstructionText}>Saisissez les coordonnées de la personne qui envoie le colis.</Text>
 
                 <Text style={styles.inputSubLabel}>Nom complet *</Text>
                 <TextInput
                   style={styles.formInput}
-                  placeholder="Sender Full Name *"
+                  placeholder="Nom & prénom de l'expéditeur *"
                   placeholderTextColor="#94a3b8"
                   value={senderName}
                   onChangeText={setSenderName}
                 />
 
-                <Text style={styles.inputSubLabel}>📞 Numéro de téléphone</Text>
+                <Text style={styles.inputSubLabel}>Numéro de téléphone</Text>
                 <TextInput
                   style={styles.formInput}
-                  placeholder="Sender Phone Number (e.g. +33 6 12 34 56 78)"
+                  placeholder="Ex : +33 6 12 34 56 78"
                   placeholderTextColor="#94a3b8"
                   keyboardType="phone-pad"
                   value={senderPhone}
                   onChangeText={setSenderPhone}
                 />
 
-                <Text style={styles.inputSubLabel}>🗺️ Ville de départ *</Text>
+                <Text style={styles.inputSubLabel}>Ville de départ *</Text>
                 <TextInput
                   style={styles.formInput}
-                  placeholder={direction === 'FR_TO_MA' ? 'From (e.g. Paris) *' : 'From (e.g. Casablanca) *'}
+                  placeholder={direction === 'FR_TO_MA' ? 'Ville en France (ex : Paris) *' : 'Ville au Maroc (ex : Casablanca) *'}
                   placeholderTextColor="#94a3b8"
                   value={fromCity}
                   onChangeText={setFromCity}
                 />
-   {/* Radio Buttons for Delivery Mode (isADomicile) */}
-                <Text style={styles.inputSubLabel}>🏠 Mode de Livraison *</Text>
+
+                {/* Radio Buttons for Delivery Mode (isADomicile) */}
+                <Text style={styles.inputSubLabel}>Mode de Livraison *</Text>
                 <View style={styles.radioGroup}>
                   <TouchableOpacity
                     style={[
@@ -303,53 +310,53 @@ export default function CreateColis({
                     </Text>
                   </TouchableOpacity>
                 </View>
+
                 <TouchableOpacity
                   style={styles.nextStepButton}
                   onPress={handleNextStep1}
                   activeOpacity={0.85}
                 >
-                  <Text style={styles.nextStepText}>Next: Receiver Details ➔</Text>
+                  <Text style={styles.nextStepText}>Suivant : Destinataire ➔</Text>
                 </TouchableOpacity>
-                
               </View>
-              
             )}
 
             {/* STEP 2: RECEIVER DETAILS */}
             {currentStep === 2 && (
               <View style={styles.stepFormContent}>
-                <Text style={styles.formSectionTitle}>📍 Step 2: Receiver Details</Text>
-                <Text style={styles.stepInstructionText}>Enter the recipient details at the destination point.</Text>
+                <Text style={styles.formSectionTitle}>Étape 2 : Destinataire</Text>
+                <Text style={styles.stepInstructionText}>Saisissez les coordonnées de la personne qui réceptionnera le colis.</Text>
 
                 <Text style={styles.inputSubLabel}>Nom complet *</Text>
                 <TextInput
                   style={styles.formInput}
-                  placeholder="Receiver Full Name *"
+                  placeholder="Nom & prénom du destinataire *"
                   placeholderTextColor="#94a3b8"
                   value={receiverName}
                   onChangeText={setReceiverName}
                 />
 
-                <Text style={styles.inputSubLabel}>📞 Numéro de téléphone</Text>
+                <Text style={styles.inputSubLabel}>Numéro de téléphone</Text>
                 <TextInput
                   style={styles.formInput}
-                  placeholder="Receiver Phone Number (e.g. +212 6 61 23 45 67)"
+                  placeholder="Ex : +212 6 61 23 45 67"
                   placeholderTextColor="#94a3b8"
                   keyboardType="phone-pad"
                   value={receiverPhone}
                   onChangeText={setReceiverPhone}
                 />
 
-                <Text style={styles.inputSubLabel}>🗺️ Ville d'arrivée *</Text>
+                <Text style={styles.inputSubLabel}>Ville d'arrivée *</Text>
                 <TextInput
                   style={styles.formInput}
-                  placeholder={direction === 'FR_TO_MA' ? 'To (e.g. Casablanca) *' : 'To (e.g. Paris) *'}
+                  placeholder={direction === 'FR_TO_MA' ? 'Ville au Maroc (ex : Casablanca) *' : 'Ville en France (ex : Paris) *'}
                   placeholderTextColor="#94a3b8"
                   value={toCity}
                   onChangeText={setToCity}
                 />
+
                 {/* Radio Buttons for Payment Status */}
-                <Text style={styles.inputSubLabel}>💳 Payé / Payment Status *</Text>
+                <Text style={styles.inputSubLabel}>Statut de paiement *</Text>
                 <View style={styles.radioGroup}>
                   <TouchableOpacity
                     style={[
@@ -373,7 +380,7 @@ export default function CreateColis({
                         isPaid === true && styles.radioTextSelectedSuccess,
                       ]}
                     >
-                      Oui / Yes (Paid)
+                      Oui (Payé)
                     </Text>
                   </TouchableOpacity>
 
@@ -399,19 +406,19 @@ export default function CreateColis({
                         isPaid === false && styles.radioTextSelectedDanger,
                       ]}
                     >
-                      Non / No (Unpaid)
+                      Non (Non Payé)
                     </Text>
                   </TouchableOpacity>
                 </View>
-
-             
 
                 <View style={styles.stepNavRow}>
                   <TouchableOpacity
                     style={styles.backStepButton}
                     onPress={() => setCurrentStep(1)}
+                    activeOpacity={0.8}
                   >
-                    <Text style={styles.backStepText}>⬅️ Back</Text>
+                    <ArrowLeft size={16} color="#334155" style={{ marginRight: 4 }} />
+                    <Text style={styles.backStepText}>Retour</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -419,19 +426,17 @@ export default function CreateColis({
                     onPress={handleNextStep2}
                     activeOpacity={0.85}
                   >
-                    <Text style={styles.nextStepText}>Next: Colis Infos ➔</Text>
+                    <Text style={styles.nextStepText}>Suivant : Infos colis ➔</Text>
                   </TouchableOpacity>
                 </View>
-
               </View>
-
             )}
 
             {/* STEP 3: COLIS INFOS */}
             {currentStep === 3 && (
               <View style={styles.stepFormContent}>
-                <Text style={styles.formSectionTitle}>📦 Step 3: Colis Specifications & Photo</Text>
-                <Text style={styles.stepInstructionText}>Specify parcel metrics, payment status, photo and description.</Text>
+                <Text style={styles.formSectionTitle}>Étape 3 : Caractéristiques & Photo</Text>
+                <Text style={styles.stepInstructionText}>Spécifiez les métriques, la photo et la description du colis.</Text>
 
                 {/* Summary badge of sender -> receiver */}
                 <View style={styles.summaryBox}>
@@ -440,10 +445,8 @@ export default function CreateColis({
                   </Text>
                 </View>
 
-
-
                 {/* Colis Image Selector */}
-                <Text style={styles.inputSubLabel}>🖼️ Parcel Photo / Image</Text>
+                <Text style={styles.inputSubLabel}>Photo du colis</Text>
                 <View style={styles.imageSelectorContainer}>
                   {PRESET_IMAGES.map((imgUrl, index) => (
                     <TouchableOpacity
@@ -453,11 +456,12 @@ export default function CreateColis({
                         image === imgUrl && styles.presetImageSelected,
                       ]}
                       onPress={() => setImage(imgUrl)}
+                      activeOpacity={0.85}
                     >
                       <Image source={{ uri: imgUrl }} style={styles.presetImage} />
                       {image === imgUrl && (
                         <View style={styles.selectedCheckOverlay}>
-                          <Text style={styles.checkText}>✓</Text>
+                          <Check size={12} color="#FFFFFF" strokeWidth={3} />
                         </View>
                       )}
                     </TouchableOpacity>
@@ -465,18 +469,18 @@ export default function CreateColis({
                 </View>
                 <TextInput
                   style={styles.formInput}
-                  placeholder="Or paste custom Image URL"
+                  placeholder="Ou collez l'URL personnalisée d'une image"
                   placeholderTextColor="#94a3b8"
                   value={image}
                   onChangeText={setImage}
                 />
 
                 {/* Package Specifications */}
-                <Text style={styles.inputSubLabel}>⚖️ Package Metrics</Text>
+                <Text style={styles.inputSubLabel}>Métriques du colis</Text>
                 <View style={styles.specInputRow}>
                   <TextInput
                     style={[styles.formInput, { flex: 1, marginRight: 6 }]}
-                    placeholder="Weight (kg) *"
+                    placeholder="Poids (kg) *"
                     placeholderTextColor="#94a3b8"
                     keyboardType="numeric"
                     value={weight}
@@ -484,7 +488,7 @@ export default function CreateColis({
                   />
                   <TextInput
                     style={[styles.formInput, { flex: 1, marginRight: 6 }]}
-                    placeholder="Qty *"
+                    placeholder="Qté *"
                     placeholderTextColor="#94a3b8"
                     keyboardType="numeric"
                     value={quantity}
@@ -492,7 +496,7 @@ export default function CreateColis({
                   />
                   <TextInput
                     style={[styles.formInput, { flex: 1 }]}
-                    placeholder="Price (€) *"
+                    placeholder="Prix (MAD) *"
                     placeholderTextColor="#94a3b8"
                     keyboardType="numeric"
                     value={price}
@@ -502,7 +506,7 @@ export default function CreateColis({
 
                 <TextInput
                   style={[styles.formInput, styles.textArea]}
-                  placeholder="Package Contents Description / Notes"
+                  placeholder="Description du contenu / Remarques"
                   placeholderTextColor="#94a3b8"
                   multiline={true}
                   numberOfLines={3}
@@ -514,8 +518,10 @@ export default function CreateColis({
                   <TouchableOpacity
                     style={styles.backStepButton}
                     onPress={() => setCurrentStep(2)}
+                    activeOpacity={0.8}
                   >
-                    <Text style={styles.backStepText}>⬅️ Back</Text>
+                    <ArrowLeft size={16} color="#334155" style={{ marginRight: 4 }} />
+                    <Text style={styles.backStepText}>Retour</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -523,7 +529,7 @@ export default function CreateColis({
                     onPress={handleFormSubmit}
                     activeOpacity={0.85}
                   >
-                    <Text style={styles.formSubmitText}>Create Shipment 🚀</Text>
+                    <Text style={styles.formSubmitText}>Créer l'expédition</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -538,91 +544,99 @@ export default function CreateColis({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     justifyContent: 'flex-end',
   },
   modalContentLarge: {
-    backgroundColor: '#1e293b',
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
     maxHeight: '92%',
-    borderColor: '#334155',
+    borderColor: '#e2e8f0',
     borderWidth: 1,
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 10,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#334155',
-    paddingBottom: 12,
+    borderBottomColor: '#f1f5f9',
+    paddingBottom: 14,
     marginBottom: 12,
   },
   headerTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  modalIcon: {
-    fontSize: 20,
+  headerIconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#eff6ff',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 8,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#f8fafc',
+    color: '#0f172a',
   },
   closeButton: {
-    padding: 6,
-    borderRadius: 20,
-    backgroundColor: '#0f172a',
-  },
-  closeButtonText: {
-    fontSize: 16,
-    color: '#94a3b8',
-    fontWeight: '700',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f1f5f9',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   // Stepper Header
   stepperContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#0f172a',
-    padding: 10,
+    backgroundColor: '#f8fafc',
+    padding: 6,
     borderRadius: 12,
-    marginBottom: 14,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#e2e8f0',
   },
   stepItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
     borderRadius: 8,
   },
   stepItemActive: {
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    backgroundColor: '#eff6ff',
   },
   stepNumberBadge: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#334155',
+    backgroundColor: '#e2e8f0',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 6,
   },
   stepNumberBadgeActive: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#2563eb',
   },
   stepNumberText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#94a3b8',
+    color: '#64748b',
   },
   stepNumberTextActive: {
-    color: '#ffffff',
+    color: '#FFFFFF',
   },
   stepLabel: {
     fontSize: 12,
@@ -630,29 +644,29 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   stepLabelActive: {
-    color: '#38bdf8',
-    fontWeight: '800',
+    color: '#1e40af',
+    fontWeight: '700',
   },
   stepDivider: {
     width: 14,
     height: 1,
-    backgroundColor: '#334155',
+    backgroundColor: '#e2e8f0',
   },
   modalBody: {
     marginBottom: 10,
   },
   directionBadge: {
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    backgroundColor: '#eff6ff',
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 8,
     alignSelf: 'flex-start',
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#38bdf8',
+    borderColor: '#bfdbfe',
   },
   directionBadgeText: {
-    color: '#38bdf8',
+    color: '#1d4ed8',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -660,76 +674,77 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   formSectionTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
-    color: '#38bdf8',
-    marginBottom: 4,
+    color: '#0f172a',
+    marginBottom: 2,
   },
   stepInstructionText: {
     fontSize: 12,
-    color: '#94a3b8',
-    marginBottom: 14,
+    color: '#64748b',
+    marginBottom: 12,
   },
   inputSubLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#94a3b8',
-    marginTop: 8,
+    color: '#64748b',
+    marginTop: 10,
     marginBottom: 6,
     textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   summaryBox: {
-    backgroundColor: '#0f172a',
+    backgroundColor: '#eff6ff',
     padding: 10,
     borderRadius: 8,
-    marginBottom: 12,
+    marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#bfdbfe',
   },
   summaryText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#10b981',
+    color: '#1d4ed8',
   },
 
-  // Radio Buttons for Payment Status
+  // Radio Buttons
   radioGroup: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 8,
+    gap: 8,
   },
   radioButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0f172a',
-    paddingVertical: 12,
+    backgroundColor: '#f8fafc',
+    paddingVertical: 11,
     paddingHorizontal: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#334155',
-    marginRight: 6,
+    borderColor: '#e2e8f0',
   },
   radioButtonSelectedSuccess: {
-    borderColor: '#10b981',
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderColor: '#22c55e',
+    backgroundColor: '#f0fdf4',
   },
   radioButtonSelectedDanger: {
     borderColor: '#ef4444',
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: '#fef2f2',
   },
   radioCircle: {
     height: 18,
     width: 18,
     borderRadius: 9,
     borderWidth: 2,
-    borderColor: '#64748b',
+    borderColor: '#94a3b8',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
   },
   radioCircleSelectedSuccess: {
-    borderColor: '#10b981',
+    borderColor: '#22c55e',
   },
   radioCircleSelectedDanger: {
     borderColor: '#ef4444',
@@ -738,7 +753,7 @@ const styles = StyleSheet.create({
     height: 9,
     width: 9,
     borderRadius: 4.5,
-    backgroundColor: '#10b981',
+    backgroundColor: '#22c55e',
   },
   radioInnerCircleDanger: {
     height: 9,
@@ -749,33 +764,34 @@ const styles = StyleSheet.create({
   radioText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#94a3b8',
+    color: '#64748b',
   },
   radioTextSelectedSuccess: {
-    color: '#10b981',
+    color: '#15803d',
     fontWeight: '800',
   },
   radioTextSelectedDanger: {
-    color: '#ef4444',
+    color: '#b91c1c',
     fontWeight: '800',
   },
 
   imageSelectorContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   presetImageWrapper: {
     width: '23%',
     height: 55,
-    borderRadius: 8,
+    borderRadius: 10,
     overflow: 'hidden',
     borderWidth: 2,
-    borderColor: '#334155',
+    borderColor: '#e2e8f0',
     position: 'relative',
+    backgroundColor: '#f1f5f9',
   },
   presetImageSelected: {
-    borderColor: '#3b82f6',
+    borderColor: '#2563eb',
   },
   presetImage: {
     width: '100%',
@@ -784,30 +800,25 @@ const styles = StyleSheet.create({
   },
   selectedCheckOverlay: {
     position: 'absolute',
-    top: 2,
-    right: 2,
-    backgroundColor: '#3b82f6',
-    borderRadius: 10,
+    top: 3,
+    right: 3,
+    backgroundColor: '#2563eb',
+    borderRadius: 9,
     width: 18,
     height: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkText: {
-    color: '#ffffff',
-    fontSize: 10,
-    fontWeight: '900',
-  },
   formInput: {
-    backgroundColor: '#0f172a',
+    backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: '#f8fafc',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: '#0f172a',
     fontSize: 14,
     borderWidth: 1,
-    borderColor: '#334155',
-    marginBottom: 10,
+    borderColor: '#e2e8f0',
+    marginBottom: 8,
   },
   specInputRow: {
     flexDirection: 'row',
@@ -820,52 +831,55 @@ const styles = StyleSheet.create({
   stepNavRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 12,
   },
   backStepButton: {
-    backgroundColor: '#0f172a',
-    paddingVertical: 14,
+    backgroundColor: '#f1f5f9',
+    paddingVertical: 13,
     paddingHorizontal: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#e2e8f0',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   backStepText: {
-    color: '#f8fafc',
-    fontSize: 14,
+    color: '#334155',
+    fontSize: 13,
     fontWeight: '700',
   },
   nextStepButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#2563eb',
     borderRadius: 12,
-    paddingVertical: 14,
+    paddingVertical: 13,
     alignItems: 'center',
-    marginTop: 10,
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
+    justifyContent: 'center',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
   },
   nextStepText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '800',
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
   formSubmitButton: {
-    backgroundColor: '#10b981',
+    backgroundColor: '#16a34a',
     borderRadius: 12,
-    paddingVertical: 14,
+    paddingVertical: 13,
     alignItems: 'center',
-    shadowColor: '#10b981',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
+    justifyContent: 'center',
+    shadowColor: '#16a34a',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
   },
   formSubmitText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '800',
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

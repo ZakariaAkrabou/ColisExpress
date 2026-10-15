@@ -37,7 +37,7 @@ export interface HomeScreenProps {
   onMenuPress?: () => void;
   onNotificationPress?: () => void;
   onLocationPress?: () => void;
-  onNavigateTab?: (tab: 'colis' | 'clients' | 'locations' | 'invoices' | 'stats' | 'settings') => void;
+  onNavigateTab?: (tab: 'colis' | 'clients' | 'locations' | 'invoices' | 'stats' | 'settings' | 'docs') => void;
   onViewAllStats?: () => void;
   stats?: Partial<HomeStats>;
 }
@@ -164,10 +164,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </View>
 
           <View style={styles.gridRow} className="flex-row justify-between mb-2">
-            {/* Card 3: Factures */}
+            {/* Card 3: Documents */}
             <TouchableOpacity
               style={styles.actionCard}
-              onPress={() => onNavigateTab?.('invoices')}
+              onPress={() => onNavigateTab?.('docs')}
               activeOpacity={0.85}
               className="bg-white rounded-2xl p-4 shadow-sm flex-row items-center justify-between border border-slate-100"
             >
@@ -176,7 +176,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   <FileText size={20} color="#334155" strokeWidth={2.2} />
                 </View>
                 <Text style={styles.inactiveCardText} className="text-slate-800 font-bold text-base mt-1">
-                  Factures
+                  Documents
                 </Text>
               </View>
               <ChevronRight size={20} color="#94a3b8" strokeWidth={2.2} />
