@@ -15,19 +15,20 @@ export const Footer: React.FC<FooterProps> = ({
   onTabChange,
 }) => {
   return (
-    <View style={styles.footerContainer} className="bg-white border-t border-slate-100 flex-row items-center justify-around py-2 px-1">
-      {/* 1. First: Colis */}
+    <View style={styles.footerContainer} className="bg-white border-t border-slate-100 flex-row items-center justify-between py-1.5 px-1">
+      {/* 1. Colis */}
       <TouchableOpacity
         style={styles.tabItem}
         onPress={() => onTabChange('colis')}
         activeOpacity={0.7}
       >
         <Package
-          size={20}
+          size={19}
           color={activeTab === 'colis' ? '#2563eb' : '#94a3b8'}
           strokeWidth={activeTab === 'colis' ? 2.4 : 1.8}
         />
         <Text
+          numberOfLines={1}
           style={[
             styles.tabLabel,
             activeTab === 'colis' && styles.activeTabLabel,
@@ -37,18 +38,19 @@ export const Footer: React.FC<FooterProps> = ({
         </Text>
       </TouchableOpacity>
 
-      {/* 2. Second: Docs */}
+      {/* 2. Docs */}
       <TouchableOpacity
         style={styles.tabItem}
         onPress={() => onTabChange('docs')}
         activeOpacity={0.7}
       >
         <FileText
-          size={20}
+          size={19}
           color={activeTab === 'docs' ? '#2563eb' : '#94a3b8'}
           strokeWidth={activeTab === 'docs' ? 2.4 : 1.8}
         />
         <Text
+          numberOfLines={1}
           style={[
             styles.tabLabel,
             activeTab === 'docs' && styles.activeTabLabel,
@@ -58,34 +60,70 @@ export const Footer: React.FC<FooterProps> = ({
         </Text>
       </TouchableOpacity>
 
-      {/* 3. Third (Center Elevated Button): Home */}
-      <View style={styles.centerButtonWrapper}>
-        <TouchableOpacity
+      {/* 3. Home / Accueil */}
+      <TouchableOpacity
+        style={styles.tabItem}
+        onPress={() => onTabChange('home')}
+        activeOpacity={0.8}
+      >
+        <View
           style={[
-            styles.centerButton,
-            activeTab === 'home' && styles.activeCenterButton,
+            styles.homeBadge,
+            activeTab === 'home' && styles.homeBadgeActive,
           ]}
-          onPress={() => onTabChange('home')}
-          activeOpacity={0.85}
-          accessibilityLabel="Accueil"
-          accessibilityRole="button"
         >
-          <Home size={22} color="#FFFFFF" strokeWidth={activeTab === 'home' ? 2.8 : 2.2} />
-        </TouchableOpacity>
-      </View>
+          <Home
+            size={18}
+            color={activeTab === 'home' ? '#FFFFFF' : '#1d4ed8'}
+            strokeWidth={activeTab === 'home' ? 2.6 : 2.0}
+          />
+        </View>
+        <Text
+          numberOfLines={1}
+          style={[
+            styles.tabLabel,
+            activeTab === 'home' && styles.activeTabLabel,
+          ]}
+        >
+          Accueil
+        </Text>
+      </TouchableOpacity>
 
-      {/* 4. Fourth: Locations */}
+      {/* 4. Clients */}
+      <TouchableOpacity
+        style={styles.tabItem}
+        onPress={() => onTabChange('clients')}
+        activeOpacity={0.7}
+      >
+        <Users
+          size={19}
+          color={activeTab === 'clients' ? '#2563eb' : '#94a3b8'}
+          strokeWidth={activeTab === 'clients' ? 2.4 : 1.8}
+        />
+        <Text
+          numberOfLines={1}
+          style={[
+            styles.tabLabel,
+            activeTab === 'clients' && styles.activeTabLabel,
+          ]}
+        >
+          Clients
+        </Text>
+      </TouchableOpacity>
+
+      {/* 5. Locations */}
       <TouchableOpacity
         style={styles.tabItem}
         onPress={() => onTabChange('locations')}
         activeOpacity={0.7}
       >
         <MapPin
-          size={20}
+          size={19}
           color={activeTab === 'locations' ? '#2563eb' : '#94a3b8'}
           strokeWidth={activeTab === 'locations' ? 2.4 : 1.8}
         />
         <Text
+          numberOfLines={1}
           style={[
             styles.tabLabel,
             activeTab === 'locations' && styles.activeTabLabel,
@@ -95,24 +133,25 @@ export const Footer: React.FC<FooterProps> = ({
         </Text>
       </TouchableOpacity>
 
-      {/* 5. Fifth: Clients */}
+      {/* 6. Settings / Paramètres */}
       <TouchableOpacity
         style={styles.tabItem}
-        onPress={() => onTabChange('clients')}
+        onPress={() => onTabChange('settings')}
         activeOpacity={0.7}
       >
-        <Users
-          size={20}
-          color={activeTab === 'clients' ? '#2563eb' : '#94a3b8'}
-          strokeWidth={activeTab === 'clients' ? 2.4 : 1.8}
+        <Settings
+          size={19}
+          color={activeTab === 'settings' || activeTab === 'more' ? '#2563eb' : '#94a3b8'}
+          strokeWidth={activeTab === 'settings' || activeTab === 'more' ? 2.4 : 1.8}
         />
         <Text
+          numberOfLines={1}
           style={[
             styles.tabLabel,
-            activeTab === 'clients' && styles.activeTabLabel,
+            (activeTab === 'settings' || activeTab === 'more') && styles.activeTabLabel,
           ]}
         >
-          Clients
+          Paramètres
         </Text>
       </TouchableOpacity>
     </View>
@@ -126,12 +165,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingVertical: 8,
-    paddingHorizontal: 8,
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    paddingHorizontal: 4,
     borderTopWidth: 1,
     borderTopColor: '#f1f5f9',
-    paddingBottom: Platform.OS === 'ios' ? 24 : 10,
+    paddingBottom: Platform.OS === 'ios' ? 22 : 8,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
@@ -142,42 +181,34 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
+    paddingVertical: 2,
+    minWidth: 0,
   },
   tabLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '500',
     color: '#94a3b8',
-    marginTop: 3,
+    marginTop: 2,
+    textAlign: 'center',
   },
   activeTabLabel: {
     color: '#2563eb',
     fontWeight: '700',
   },
-  centerButtonWrapper: {
-    width: 60,
+  homeBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#eff6ff',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  centerButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+  homeBadgeActive: {
     backgroundColor: '#1d4ed8',
-    alignItems: 'center',
-    justifyContent: 'center',
     shadowColor: '#1d4ed8',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    elevation: 6,
-  },
-  activeCenterButton: {
-    backgroundColor: '#2563eb',
-    borderWidth: 2.5,
-    borderColor: '#dbeafe',
-    shadowColor: '#2563eb',
-    shadowOpacity: 0.55,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 4,
+    elevation: 3,
   },
 });
