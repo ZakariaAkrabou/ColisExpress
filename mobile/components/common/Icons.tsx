@@ -74,6 +74,58 @@ export const ColisLogoIcon = ({ size = 32, color = '#FFFFFF' }: { size?: number;
   );
 };
 
+import Svg, { Circle, Rect, Path, G, ClipPath, Defs } from 'react-native-svg';
+
+// Custom SVG France Flag Circle
+export const FranceFlagCircle = ({ size = 42 }: { size?: number }) => {
+  const clipId = `fr-clip-${size}`;
+  return (
+    <View style={{ width: size, height: size, borderRadius: size / 2, overflow: 'hidden', elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 3 }}>
+      <Svg width={size} height={size} viewBox="0 0 36 36">
+        <Defs>
+          <ClipPath id={clipId}>
+            <Circle cx="18" cy="18" r="18" />
+          </ClipPath>
+        </Defs>
+        <G clipPath={`url(#${clipId})`}>
+          <Rect x="0" y="0" width="12" height="36" fill="#002654" />
+          <Rect x="12" y="0" width="12" height="36" fill="#FFFFFF" />
+          <Rect x="24" y="0" width="12" height="36" fill="#ED2939" />
+        </G>
+        <Circle cx="18" cy="18" r="17.5" fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="1" />
+      </Svg>
+    </View>
+  );
+};
+
+// Custom SVG Morocco Flag Circle
+export const MoroccoFlagCircle = ({ size = 42 }: { size?: number }) => {
+  const clipId = `ma-clip-${size}`;
+  return (
+    <View style={{ width: size, height: size, borderRadius: size / 2, overflow: 'hidden', elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 3 }}>
+      <Svg width={size} height={size} viewBox="0 0 36 36">
+        <Defs>
+          <ClipPath id={clipId}>
+            <Circle cx="18" cy="18" r="18" />
+          </ClipPath>
+        </Defs>
+        <G clipPath={`url(#${clipId})`}>
+          <Circle cx="18" cy="18" r="18" fill="#C1272D" />
+          {/* Moroccan 5-pointed star */}
+          <Path
+            d="M18 9.5 L19.9 15.3 H26 L21.1 18.9 L23 24.7 L18 21.1 L13 24.7 L14.9 18.9 L10 15.3 H16.1 Z"
+            fill="none"
+            stroke="#006233"
+            strokeWidth="1.6"
+            strokeLinejoin="round"
+          />
+        </G>
+        <Circle cx="18" cy="18" r="17.5" fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="1" />
+      </Svg>
+    </View>
+  );
+};
+
 // Morocco Flag Badge
 export const MoroccoFlagBadge = ({ size = 26 }: { size?: number }) => {
   return (

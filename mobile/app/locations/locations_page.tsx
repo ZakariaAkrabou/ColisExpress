@@ -5,10 +5,10 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   StyleSheet,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MapPin, Plus, Search, Trash2, Edit3 } from 'lucide-react-native';
 import { MoroccoFlagBadge, FranceFlagBadge } from '../../components/common/Icons';
 

@@ -4,285 +4,219 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Image,
   StyleSheet,
   Dimensions,
   StatusBar,
+  Platform,
+  Image,
 } from 'react-native';
 import {
-  Package,
-  Users,
-  FileText,
-  BarChart2,
   ChevronRight,
-  CheckCircle2,
   Truck,
-  RotateCcw,
+  Clock,
+  Zap,
+  CheckCircle2,
+  CircleDot,
+  ArrowRightLeft,
 } from 'lucide-react-native';
-import Header from '../../components/layout/Header';
-import { MoroccoFlagBadge, FranceFlagBadge } from '../../components/common/Icons';
+import { FranceFlagCircle, MoroccoFlagCircle } from '../../components/common/Icons';
 
 const { width } = Dimensions.get('window');
 
-export interface HomeStats {
-  totalColis: number | string;
-  livres: number | string;
-  enTransit: number | string;
-  retournes: number | string;
-}
-
 export interface HomeScreenProps {
+  userName?: string;
   direction?: 'MA_TO_FR' | 'FR_TO_MA';
+  onSelectDirection?: (dir: 'MA_TO_FR' | 'FR_TO_MA') => void;
   onToggleDirection?: () => void;
-  onMenuPress?: () => void;
-  onNotificationPress?: () => void;
   onLocationPress?: () => void;
-  onNavigateTab?: (tab: 'colis' | 'clients' | 'locations' | 'invoices' | 'stats' | 'settings') => void;
-  onViewAllStats?: () => void;
-  stats?: Partial<HomeStats>;
+  onNavigateTab?: (tab: 'home' | 'colis' | 'clients' | 'locations' | 'settings') => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
-  direction = 'MA_TO_FR',
+  userName = 'Zakaria',
+  direction = 'FR_TO_MA',
+  onSelectDirection,
   onToggleDirection,
-  onMenuPress,
-  onNotificationPress,
-  onLocationPress,
   onNavigateTab,
-  onViewAllStats,
-  stats = {
-    totalColis: '1 248',
-    livres: '932',
-    enTransit: '287',
-    retournes: '29',
-  },
 }) => {
-  return (
-    <View style={styles.container} className="flex-1 bg-slate-50">
-      <StatusBar barStyle="light-content" backgroundColor="#1d4ed8" />
+  const isFrToMa = direction === 'FR_TO_MA';
 
-      {/* Top Header */}
-      <Header
-        direction={direction}
-        onMenuPress={onMenuPress}
-        onNotificationPress={onNotificationPress}
-        onLocationPress={onLocationPress || (() => onNavigateTab?.('locations'))}
-        unreadNotifications={true}
-      />
+  const handleSelect = (selectedDir: 'MA_TO_FR' | 'FR_TO_MA') => {
+    if (onSelectDirection) {
+      onSelectDirection(selectedDir);
+    } else if (onNavigateTab) {
+      onNavigateTab('colis');
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0A2E70" />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
-        className="flex-1"
+        bounces={true}
       >
-
-        <View style={styles.heroWrapper} className="bg-blue-700 pb-5 px-4 pt-2">
-
-          <TouchableOpacity
-            style={styles.routeHeader}
-            onPress={onToggleDirection}
-            activeOpacity={0.8}
-            className="flex-row items-center justify-center my-2"
-          >
-            {direction === 'MA_TO_FR' ? (
-              <>
-                <MoroccoFlagBadge size={34} />
-                <View style={styles.dashedRouteLine}>
-                  <Text style={styles.dashedArrowText}>- - - - ➔</Text>
-                </View>
-                <FranceFlagBadge size={34} />
-              </>
-            ) : (
-              <>
-                <FranceFlagBadge size={34} />
-                <View style={styles.dashedRouteLine}>
-                  <Text style={styles.dashedArrowText}>- - - - ➔</Text>
-                </View>
-                <MoroccoFlagBadge size={34} />
-              </>
-            )}
-          </TouchableOpacity>
-
-
-          <View style={styles.heroCard} className="rounded-2xl overflow-hidden my-3 shadow-md">
-            <Image
-              source={require('../../assets/truck_banner.jpg')}
-              style={styles.heroImage}
-              resizeMode="cover"
-            />
+        {/* Top Hero Section with Centered Logo */}
+        <View style={styles.heroCard}>
+          {/* Logo Center */}
+          <View style={styles.logoContainer}>
+            <View style={styles.logoBadge}>
+              <Image
+                source={require('../../assets/logo.png')}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
+            </View>
           </View>
 
-          {/* Hero Slogan & Subtitle */}
-          <View style={styles.heroTextContainer} className="items-center px-4 mt-2 mb-1">
-            <Text style={styles.heroTitle} className="text-white text-xl font-bold text-center">
-              Vos colis, notre priorité
-            </Text>
-            <Text style={styles.heroSubtitle} className="text-blue-100 text-xs text-center mt-1.5 leading-4">
-              Un service fiable, rapide et sécurisé{'\n'}pour tous vos envois.
+          {/* Centered Greeting */}
+          <View style={styles.greetingContainer}>
+            <Text style={styles.heroGreeting}>Bonjour, {userName}</Text>
+            <Text style={styles.heroSubtitle}>
+              Sélectionnez le serveur de routage pour vos expéditions
             </Text>
           </View>
-        </View>
 
-        {/* --- Main Action Navigation Grid (2x2 Cards) --- */}
-        <View style={styles.mainGridSection} className="px-4 -mt-2">
-          <View style={styles.gridRow} className="flex-row justify-between mb-3.5">
-            {/* Card 1: Mes colis (Active Blue Card) */}
+          {/* Quick Swap Direction Button */}
+          {onToggleDirection && (
             <TouchableOpacity
-              style={[styles.actionCard, styles.activeActionCard]}
-              onPress={() => onNavigateTab?.('colis')}
-              activeOpacity={0.85}
-              className="bg-blue-600 rounded-2xl p-4 shadow-sm flex-row items-center justify-between"
+              style={styles.quickSwapBar}
+              activeOpacity={0.8}
+              onPress={onToggleDirection}
             >
-              <View style={styles.cardLeftContent}>
-                <View style={styles.activeIconCircle} className="w-10 h-10 rounded-full bg-blue-500/80 items-center justify-center mb-2">
-                  <Package size={20} color="#FFFFFF" strokeWidth={2.4} />
-                </View>
-                <Text style={styles.activeCardText} className="text-white font-bold text-base mt-1">
-                  Mes colis
-                </Text>
-              </View>
-              <ChevronRight size={20} color="#FFFFFF" strokeWidth={2.5} />
-            </TouchableOpacity>
-
-            {/* Card 2: Clients */}
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={() => onNavigateTab?.('clients')}
-              activeOpacity={0.85}
-              className="bg-white rounded-2xl p-4 shadow-sm flex-row items-center justify-between border border-slate-100"
-            >
-              <View style={styles.cardLeftContent}>
-                <View style={styles.inactiveIconCircle} className="w-10 h-10 rounded-full bg-slate-50 items-center justify-center mb-2">
-                  <Users size={20} color="#334155" strokeWidth={2.2} />
-                </View>
-                <Text style={styles.inactiveCardText} className="text-slate-800 font-bold text-base mt-1">
-                  Clients
-                </Text>
-              </View>
-              <ChevronRight size={20} color="#94a3b8" strokeWidth={2.2} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.gridRow} className="flex-row justify-between mb-2">
-            {/* Card 3: Factures */}
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={() => onNavigateTab?.('invoices')}
-              activeOpacity={0.85}
-              className="bg-white rounded-2xl p-4 shadow-sm flex-row items-center justify-between border border-slate-100"
-            >
-              <View style={styles.cardLeftContent}>
-                <View style={styles.inactiveIconCircle} className="w-10 h-10 rounded-full bg-slate-50 items-center justify-center mb-2">
-                  <FileText size={20} color="#334155" strokeWidth={2.2} />
-                </View>
-                <Text style={styles.inactiveCardText} className="text-slate-800 font-bold text-base mt-1">
-                  Factures
-                </Text>
-              </View>
-              <ChevronRight size={20} color="#94a3b8" strokeWidth={2.2} />
-            </TouchableOpacity>
-
-            {/* Card 4: Statistiques */}
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={() => onNavigateTab?.('stats')}
-              activeOpacity={0.85}
-              className="bg-white rounded-2xl p-4 shadow-sm flex-row items-center justify-between border border-slate-100"
-            >
-              <View style={styles.cardLeftContent}>
-                <View style={styles.inactiveIconCircle} className="w-10 h-10 rounded-full bg-slate-50 items-center justify-center mb-2">
-                  <BarChart2 size={20} color="#334155" strokeWidth={2.2} />
-                </View>
-                <Text style={styles.inactiveCardText} className="text-slate-800 font-bold text-base mt-1">
-                  Statistiques
-                </Text>
-              </View>
-              <ChevronRight size={20} color="#94a3b8" strokeWidth={2.2} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* --- Quick Overview Section ("Aperçu rapide") --- */}
-        <View style={styles.quickOverviewSection} className="px-4 mt-5 mb-6">
-          {/* Section Header */}
-          <View style={styles.sectionHeaderRow} className="flex-row items-center justify-between mb-3.5">
-            <Text style={styles.sectionTitle} className="text-slate-900 text-lg font-bold">
-              Aperçu rapide
-            </Text>
-            <TouchableOpacity onPress={onViewAllStats || (() => onNavigateTab?.('stats'))} activeOpacity={0.7}>
-              <Text style={styles.viewAllText} className="text-blue-600 text-sm font-semibold">
-                Voir tout
+              <ArrowRightLeft size={16} color="#DBEAFE" strokeWidth={2.2} />
+              <Text style={styles.quickSwapText}>
+                Direction actuelle : {isFrToMa ? 'France ➔ Maroc' : 'Maroc ➔ France'}
               </Text>
+              <Text style={styles.quickSwapAction}>Inverser</Text>
             </TouchableOpacity>
-          </View>
-
-          {/* 2x2 Stats Summary Grid */}
-          <View style={styles.statsGrid}>
-            <View style={styles.statsRow} className="flex-row justify-between mb-3">
-              {/* Stat 1: Total colis */}
-              <View style={styles.statCard} className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex-row items-center">
-                <View style={[styles.statBadge, styles.blueStatBadge]} className="w-11 h-11 rounded-full bg-blue-50 items-center justify-center mr-3">
-                  <Package size={22} color="#2563eb" strokeWidth={2.2} />
-                </View>
-                <View style={styles.statInfo}>
-                  <Text style={styles.statLabel} className="text-slate-500 text-xs font-medium">
-                    Total colis
-                  </Text>
-                  <Text style={styles.statValue} className="text-slate-900 text-lg font-bold mt-0.5">
-                    {stats.totalColis ?? '1 248'}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Stat 2: Livrés */}
-              <View style={styles.statCard} className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex-row items-center">
-                <View style={[styles.statBadge, styles.greenStatBadge]} className="w-11 h-11 rounded-full bg-emerald-50 items-center justify-center mr-3">
-                  <CheckCircle2 size={22} color="#16a34a" strokeWidth={2.2} />
-                </View>
-                <View style={styles.statInfo}>
-                  <Text style={styles.statLabel} className="text-slate-500 text-xs font-medium">
-                    Livrés
-                  </Text>
-                  <Text style={styles.statValue} className="text-slate-900 text-lg font-bold mt-0.5">
-                    {stats.livres ?? '932'}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.statsRow} className="flex-row justify-between">
-              {/* Stat 3: En transit */}
-              <View style={styles.statCard} className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex-row items-center">
-                <View style={[styles.statBadge, styles.amberStatBadge]} className="w-11 h-11 rounded-full bg-amber-50 items-center justify-center mr-3">
-                  <Truck size={22} color="#d97706" strokeWidth={2.2} />
-                </View>
-                <View style={styles.statInfo}>
-                  <Text style={styles.statLabel} className="text-slate-500 text-xs font-medium">
-                    En transit
-                  </Text>
-                  <Text style={styles.statValue} className="text-slate-900 text-lg font-bold mt-0.5">
-                    {stats.enTransit ?? '287'}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Stat 4: Retournés */}
-              <View style={styles.statCard} className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex-row items-center">
-                <View style={[styles.statBadge, styles.roseStatBadge]} className="w-11 h-11 rounded-full bg-rose-50 items-center justify-center mr-3">
-                  <RotateCcw size={22} color="#e11d48" strokeWidth={2.2} />
-                </View>
-                <View style={styles.statInfo}>
-                  <Text style={styles.statLabel} className="text-slate-500 text-xs font-medium">
-                    Retournés
-                  </Text>
-                  <Text style={styles.statValue} className="text-slate-900 text-lg font-bold mt-0.5">
-                    {stats.retournes ?? '29'}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </View>
+          )}
         </View>
+
+        {/* Section Header */}
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionTitleRow}>
+            <Zap size={18} color="#0B3E96" strokeWidth={2.5} />
+            <Text style={styles.sectionTitle}>Lignes d'Expédition (Serveurs)</Text>
+          </View>
+          <Text style={styles.sectionHelp}>Touchez une destination pour continuer</Text>
+        </View>
+
+        {/* Route Card 1: France ➔ Maroc */}
+        <TouchableOpacity
+          style={[
+            styles.routeCard,
+            isFrToMa && styles.routeCardActive,
+          ]}
+          activeOpacity={0.88}
+          onPress={() => handleSelect('FR_TO_MA')}
+        >
+          {/* Top Header Row with Flags and Status Badge */}
+          <View style={styles.routeTopRow}>
+            <View style={styles.flagsCombo}>
+              <FranceFlagCircle size={40} />
+              <View style={styles.arrowBetweenFlags}>
+                <Text style={styles.arrowIconText}>➔</Text>
+              </View>
+              <MoroccoFlagCircle size={40} />
+            </View>
+
+            {/* Status Pill Badge */}
+            {isFrToMa ? (
+              <View style={styles.activePill}>
+                <CheckCircle2 size={13} color="#FFFFFF" strokeWidth={2.6} />
+                <Text style={styles.activePillText}>Serveur Actif</Text>
+              </View>
+            ) : (
+              <View style={styles.inactivePill}>
+                <CircleDot size={12} color="#64748B" strokeWidth={2.2} />
+                <Text style={styles.inactivePillText}>Disponible</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Route Description */}
+          <View style={styles.routeInfo}>
+            <Text style={styles.routeTitle}>France ➔ Maroc</Text>
+            <Text style={styles.routeSubtitle}>
+              Départ : Paris, Lyon, Marseille • Arrivée : Casa, Rabat, Tanger
+            </Text>
+          </View>
+
+          {/* Card Footer Details & CTA */}
+          <View style={styles.routeFooter}>
+            <View style={styles.metaItem}>
+              <Clock size={14} color="#64748B" strokeWidth={2} />
+              <Text style={styles.metaText}>Délai : 3 à 5 jours ouvrés</Text>
+            </View>
+
+            <View style={[styles.actionIndicator, isFrToMa && styles.actionIndicatorActive]}>
+              <Text style={[styles.actionIndicatorText, isFrToMa && styles.actionIndicatorTextActive]}>
+                {isFrToMa ? 'Accéder' : 'Choisir'}
+              </Text>
+              <ChevronRight size={15} color={isFrToMa ? '#FFFFFF' : '#1D4ED8'} strokeWidth={2.5} />
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        {/* Route Card 2: Maroc ➔ France */}
+        <TouchableOpacity
+          style={[
+            styles.routeCard,
+            !isFrToMa && styles.routeCardActive,
+          ]}
+          activeOpacity={0.88}
+          onPress={() => handleSelect('MA_TO_FR')}
+        >
+          {/* Top Header Row with Flags and Status Badge */}
+          <View style={styles.routeTopRow}>
+            <View style={styles.flagsCombo}>
+              <MoroccoFlagCircle size={40} />
+              <View style={styles.arrowBetweenFlags}>
+                <Text style={styles.arrowIconText}>➔</Text>
+              </View>
+              <FranceFlagCircle size={40} />
+            </View>
+
+            {/* Status Pill Badge */}
+            {!isFrToMa ? (
+              <View style={styles.activePill}>
+                <CheckCircle2 size={13} color="#FFFFFF" strokeWidth={2.6} />
+                <Text style={styles.activePillText}>Serveur Actif</Text>
+              </View>
+            ) : (
+              <View style={styles.inactivePill}>
+                <CircleDot size={12} color="#64748B" strokeWidth={2.2} />
+                <Text style={styles.inactivePillText}>Disponible</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Route Description */}
+          <View style={styles.routeInfo}>
+            <Text style={styles.routeTitle}>Maroc ➔ France</Text>
+            <Text style={styles.routeSubtitle}>
+              Départ : Casa, Marrakech, Fès • Arrivée : Paris, Lyon, Lille
+            </Text>
+          </View>
+
+          {/* Card Footer Details & CTA */}
+          <View style={styles.routeFooter}>
+            <View style={styles.metaItem}>
+              <Clock size={14} color="#64748B" strokeWidth={2} />
+              <Text style={styles.metaText}>Délai : 3 à 5 jours ouvrés</Text>
+            </View>
+
+            <View style={[styles.actionIndicator, !isFrToMa && styles.actionIndicatorActive]}>
+              <Text style={[styles.actionIndicatorText, !isFrToMa && styles.actionIndicatorTextActive]}>
+                {!isFrToMa ? 'Accéder' : 'Choisir'}
+              </Text>
+              <ChevronRight size={15} color={!isFrToMa ? '#FFFFFF' : '#1D4ED8'} strokeWidth={2.5} />
+            </View>
+          </View>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -290,219 +224,234 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
 export default HomeScreen;
 
-const CARD_WIDTH = (width - 44) / 2;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#F8FAFC',
   },
   scrollContent: {
-    paddingBottom: 24,
-  },
-  // Hero Section
-  heroWrapper: {
-    backgroundColor: '#1d4ed8',
-    paddingBottom: 24,
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-  },
-  routeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 4,
-  },
-  dashedRouteLine: {
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dashedArrowText: {
-    color: '#93c5fd',
-    fontSize: 14,
-    fontWeight: '600',
-    letterSpacing: 1,
+    paddingBottom: 36,
   },
   heroCard: {
-    borderRadius: 18,
-    overflow: 'hidden',
-    marginTop: 10,
+    backgroundColor: '#0B3E96',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? 16 : 12,
+    paddingBottom: 22,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    shadowColor: '#0B3E96',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
+    shadowRadius: 12,
+    elevation: 8,
+    alignItems: 'center',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 12,
-    backgroundColor: '#1e40af',
+  },
+  logoBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
-    shadowRadius: 8,
+    shadowRadius: 5,
     elevation: 5,
   },
-  heroImage: {
+  logoImage: {
     width: '100%',
-    height: 150,
+    height: '100%',
+    borderRadius: 14,
   },
-  heroTextContainer: {
+  greetingContainer: {
     alignItems: 'center',
-    paddingHorizontal: 12,
+    marginBottom: 14,
   },
-  heroTitle: {
-    color: '#FFFFFF',
-    fontSize: 20,
+  heroGreeting: {
+    fontSize: 23,
     fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.4,
     textAlign: 'center',
-    letterSpacing: 0.2,
   },
   heroSubtitle: {
-    color: '#dbeafe',
-    fontSize: 12.5,
+    fontSize: 13.5,
+    color: '#BFDBFE',
+    marginTop: 4,
     textAlign: 'center',
-    marginTop: 6,
-    lineHeight: 18,
-    fontWeight: '400',
-  },
-  // Main Grid
-  mainGridSection: {
+    lineHeight: 19,
     paddingHorizontal: 16,
-    marginTop: 18,
   },
-  gridRow: {
+  quickSwapBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 14,
-  },
-  actionCard: {
-    width: CARD_WIDTH,
-    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.14)',
     borderRadius: 20,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderWidth: 1,
-    borderColor: '#f1f5f9',
-    shadowColor: '#64748b',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+    borderColor: 'rgba(255, 255, 255, 0.22)',
+    gap: 8,
   },
-  activeActionCard: {
-    backgroundColor: '#2563eb', // Rich vivid blue
-    borderColor: '#1d4ed8',
-    shadowColor: '#2563eb',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  cardLeftContent: {
-    flex: 1,
-  },
-  activeIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  inactiveIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#f8fafc',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  activeCardText: {
+  quickSwapText: {
     color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  inactiveCardText: {
-    color: '#1e293b',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  // Quick Overview
-  quickOverviewSection: {
-    paddingHorizontal: 16,
-    marginTop: 18,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 14,
-  },
-  sectionTitle: {
-    color: '#0f172a',
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  viewAllText: {
-    color: '#2563eb',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
-  statsGrid: {
-    gap: 12,
+  quickSwapAction: {
+    color: '#93C5FD',
+    fontSize: 11.5,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
-  statsRow: {
+  sectionHeader: {
+    paddingHorizontal: 20,
+    marginTop: 22,
+    marginBottom: 12,
+  },
+  sectionTitleRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F172A',
+    letterSpacing: -0.3,
+  },
+  sectionHelp: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 3,
+  },
+  routeCard: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 18,
+    marginBottom: 16,
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  routeCardActive: {
+    borderColor: '#2563EB',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#1D4ED8',
+    shadowOpacity: 0.16,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  routeTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  statCard: {
-    width: CARD_WIDTH,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 14,
+  flagsCombo: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
-    shadowColor: '#64748b',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  statBadge: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+  arrowBetweenFlags: {
+    marginHorizontal: 8,
+  },
+  arrowIconText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  activePill: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    gap: 5,
   },
-  blueStatBadge: {
-    backgroundColor: '#eff6ff',
+  activePillText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
-  greenStatBadge: {
-    backgroundColor: '#f0fdf4',
+  inactivePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    gap: 5,
   },
-  amberStatBadge: {
-    backgroundColor: '#fffbeb',
+  inactivePillText: {
+    color: '#64748B',
+    fontSize: 11,
+    fontWeight: '600',
   },
-  roseStatBadge: {
-    backgroundColor: '#fef2f2',
+  routeInfo: {
+    marginBottom: 14,
   },
-  statInfo: {
-    flex: 1,
+  routeTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A',
+    letterSpacing: -0.3,
   },
-  statLabel: {
-    color: '#64748b',
-    fontSize: 11.5,
+  routeSubtitle: {
+    fontSize: 12.5,
+    color: '#64748B',
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  routeFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  metaText: {
+    fontSize: 12,
+    color: '#64748B',
     fontWeight: '500',
   },
-  statValue: {
-    color: '#0f172a',
-    fontSize: 17,
-    fontWeight: '800',
-    marginTop: 2,
+  actionIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 10,
+    backgroundColor: '#EFF6FF',
+    gap: 3,
+  },
+  actionIndicatorActive: {
+    backgroundColor: '#1D4ED8',
+  },
+  actionIndicatorText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1D4ED8',
+  },
+  actionIndicatorTextActive: {
+    color: '#FFFFFF',
   },
 });

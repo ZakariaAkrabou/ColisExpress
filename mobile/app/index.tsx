@@ -7,9 +7,14 @@ import ClientsPage, { Client } from './client/clientPage';
 import LocationsPage from './locations/locations_page';
 import SettingsPage from './settings_page';
 import Footer, { TabType } from '../components/layout/Footer';
+import SplashScreen from './auth/splash';
+import LoginScreen from './auth/login';
 import { INITIAL_COLIS, INITIAL_CLIENTS } from '../services/mockData';
 
+type AppFlowState = 'splash' | 'login' | 'app';
+
 export default function AppScreen() {
+  const [flowState, setFlowState] = useState<AppFlowState>('splash');
   const [currentRoute, setCurrentRoute] = useState<TabType>('home');
   const [direction, setDirection] = useState<'MA_TO_FR' | 'FR_TO_MA'>('MA_TO_FR');
   const [colisList, setColisList] = useState<Colis[]>(INITIAL_COLIS);
@@ -37,6 +42,16 @@ export default function AppScreen() {
     setClientsList((prev) => prev.filter((c) => c.id !== clientId));
   };
 
+  // 1. Initial Loading Splash Screen
+  if (flowState === 'splash') {
+    return <SplashScreen onFinish={() => setFlowState('login')} />;
+  }
+
+  // 2. Authentication Login Screen
+  if (flowState === 'login') {
+    return <LoginScreen onLoginSuccess={() => setFlowState('app')} />;
+  }
+
   const renderCurrentRoute = () => {
     switch (currentRoute) {
       case 'colis':
@@ -52,15 +67,15 @@ export default function AppScreen() {
       case 'home':
         return (
           <HomeScreen
+            userName="Zakaria"
             direction={direction}
+            onSelectDirection={(selectedDir) => {
+              setDirection(selectedDir);
+              setCurrentRoute('colis');
+            }}
             onToggleDirection={toggleDirection}
             onLocationPress={() => setCurrentRoute('locations')}
-            onNavigateTab={(tab) => {
-              if (tab === 'colis') setCurrentRoute('colis');
-              else if (tab === 'clients') setCurrentRoute('clients');
-              else if (tab === 'locations') setCurrentRoute('locations');
-              else if (tab === 'settings') setCurrentRoute('settings');
-            }}
+            onNavigateTab={(tab) => setCurrentRoute(tab)}
           />
         );
       case 'clients':
@@ -80,31 +95,43 @@ export default function AppScreen() {
             direction={direction}
             onChangeDirection={setDirection}
             onResetDirection={() => setCurrentRoute('home')}
+            colisList={colisList}
+            clientsList={clientsList}
+            onUpdateColisList={setColisList}
+            onClearAllData={() => {
+              setColisList([]);
+              setClientsList([]);
+            }}
+            onRestoreDefaultData={() => {
+              setColisList(INITIAL_COLIS);
+              setClientsList(INITIAL_CLIENTS);
+            }}
+            onLogout={() => setFlowState('login')}
           />
         );
       default:
         return (
           <HomeScreen
+            userName="Zakaria"
             direction={direction}
+            onSelectDirection={(selectedDir) => {
+              setDirection(selectedDir);
+              setCurrentRoute('colis');
+            }}
             onToggleDirection={toggleDirection}
             onLocationPress={() => setCurrentRoute('locations')}
-            onNavigateTab={(tab) => {
-              if (tab === 'colis') setCurrentRoute('colis');
-              else if (tab === 'clients') setCurrentRoute('clients');
-              else if (tab === 'locations') setCurrentRoute('locations');
-              else if (tab === 'settings') setCurrentRoute('settings');
-            }}
+            onNavigateTab={(tab) => setCurrentRoute(tab)}
           />
         );
     }
   };
 
   return (
-    <SafeAreaView style={styles.container} className="flex-1 bg-blue-700">
-      <StatusBar barStyle="light-content" backgroundColor="#1d4ed8" />
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B3E96" />
       
       {/* Route Content View */}
-      <View style={styles.content} className="flex-1 bg-slate-50">
+      <View style={styles.content}>
         {renderCurrentRoute()}
       </View>
 
@@ -112,7 +139,6 @@ export default function AppScreen() {
       <Footer
         activeTab={currentRoute}
         onTabChange={(tab) => setCurrentRoute(tab)}
-        onAddPress={() => setCurrentRoute('colis')}
       />
     </SafeAreaView>
   );
@@ -121,10 +147,10 @@ export default function AppScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1d4ed8',
+    backgroundColor: '#0B3E96',
   },
   content: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#F8FAFC',
   },
 });

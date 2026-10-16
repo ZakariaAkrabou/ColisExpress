@@ -42,7 +42,7 @@ export const Header: React.FC<HeaderProps> = ({
         <View style={styles.brandContainer} className="flex-row items-center space-x-2.5 flex-1">
           <View style={styles.logoBadge}>
             <Image
-              source={require('../../assets/logo.jpeg')}
+              source={require('../../assets/logo.png')}
               style={styles.logoImage}
               resizeMode="contain"
             />
@@ -51,7 +51,7 @@ export const Header: React.FC<HeaderProps> = ({
             <Text style={styles.titleText} className="text-white text-lg font-bold tracking-tight">
               {title}
             </Text>
-            
+
             {/* Location row */}
             <TouchableOpacity
               activeOpacity={onLocationPress ? 0.7 : 1}

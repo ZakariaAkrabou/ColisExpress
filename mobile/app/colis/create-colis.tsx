@@ -427,7 +427,7 @@ export default function CreateColis({
 
             )}
 
-            {/* STEP 3: COLIS INFOS */}
+           
             {currentStep === 3 && (
               <View style={styles.stepFormContent}>
                 <Text style={styles.formSectionTitle}>📦 Step 3: Colis Specifications & Photo</Text>

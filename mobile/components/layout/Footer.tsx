@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { Package, MapPin, Home, Users, Settings } from 'lucide-react-native';
+import { Home, Package, Users, MapPin, Settings } from 'lucide-react-native';
 
-export type TabType = 'colis' | 'locations' | 'home' | 'clients' | 'settings' | 'more';
+export type TabType = 'home' | 'colis' | 'clients' | 'locations' | 'settings' | 'more';
 
 export interface FooterProps {
   activeTab: TabType;
@@ -14,9 +14,15 @@ export const Footer: React.FC<FooterProps> = ({
   activeTab,
   onTabChange,
 }) => {
+  const isHome = activeTab === 'home';
+  const isColis = activeTab === 'colis';
+  const isClients = activeTab === 'clients';
+  const isLocations = activeTab === 'locations';
+  const isSettings = activeTab === 'settings' || activeTab === 'more';
+
   return (
-    <View style={styles.footerContainer} className="bg-white border-t border-slate-100 flex-row items-center justify-around py-2 px-1">
-      {/* 1. First: Colis */}
+    <View style={styles.footerContainer}>
+      {/* 1. Colis (Left 1) */}
       <TouchableOpacity
         style={styles.tabItem}
         onPress={() => onTabChange('colis')}
@@ -24,57 +30,15 @@ export const Footer: React.FC<FooterProps> = ({
       >
         <Package
           size={22}
-          color={activeTab === 'colis' ? '#2563eb' : '#94a3b8'}
-          strokeWidth={activeTab === 'colis' ? 2.4 : 1.8}
+          color={isColis ? '#2563EB' : '#94A3B8'}
+          strokeWidth={isColis ? 2.5 : 1.8}
         />
-        <Text
-          style={[
-            styles.tabLabel,
-            activeTab === 'colis' && styles.activeTabLabel,
-          ]}
-        >
+        <Text style={[styles.tabLabel, isColis && styles.activeTabLabel]}>
           Colis
         </Text>
       </TouchableOpacity>
 
-      {/* 2. Second: Locations */}
-      <TouchableOpacity
-        style={styles.tabItem}
-        onPress={() => onTabChange('locations')}
-        activeOpacity={0.7}
-      >
-        <MapPin
-          size={22}
-          color={activeTab === 'locations' ? '#2563eb' : '#94a3b8'}
-          strokeWidth={activeTab === 'locations' ? 2.4 : 1.8}
-        />
-        <Text
-          style={[
-            styles.tabLabel,
-            activeTab === 'locations' && styles.activeTabLabel,
-          ]}
-        >
-          Locations
-        </Text>
-      </TouchableOpacity>
-
-      {/* 3. Third (Center Elevated Button): Home */}
-      <View style={styles.centerButtonWrapper}>
-        <TouchableOpacity
-          style={[
-            styles.centerButton,
-            activeTab === 'home' && styles.activeCenterButton,
-          ]}
-          onPress={() => onTabChange('home')}
-          activeOpacity={0.85}
-          accessibilityLabel="Accueil"
-          accessibilityRole="button"
-        >
-          <Home size={24} color="#FFFFFF" strokeWidth={activeTab === 'home' ? 2.8 : 2.2} />
-        </TouchableOpacity>
-      </View>
-
-      {/* 4. Fourth: Clients */}
+      {/* 2. Clients (Left 2) */}
       <TouchableOpacity
         style={styles.tabItem}
         onPress={() => onTabChange('clients')}
@@ -82,20 +46,47 @@ export const Footer: React.FC<FooterProps> = ({
       >
         <Users
           size={22}
-          color={activeTab === 'clients' ? '#2563eb' : '#94a3b8'}
-          strokeWidth={activeTab === 'clients' ? 2.4 : 1.8}
+          color={isClients ? '#2563EB' : '#94A3B8'}
+          strokeWidth={isClients ? 2.5 : 1.8}
         />
-        <Text
-          style={[
-            styles.tabLabel,
-            activeTab === 'clients' && styles.activeTabLabel,
-          ]}
-        >
+        <Text style={[styles.tabLabel, isClients && styles.activeTabLabel]}>
           Clients
         </Text>
       </TouchableOpacity>
 
-      {/* 5. Fifth: Settings */}
+      {/* 3. Center Elevated Home Button (Accueil) */}
+      <View style={styles.centerButtonWrapper}>
+        <TouchableOpacity
+          style={[styles.centerButton, isHome && styles.centerButtonActive]}
+          onPress={() => onTabChange('home')}
+          activeOpacity={0.85}
+          accessibilityLabel="Accueil"
+          accessibilityRole="button"
+        >
+          <Home size={26} color="#FFFFFF" strokeWidth={2.4} />
+        </TouchableOpacity>
+        <Text style={[styles.centerLabel, isHome && styles.activeCenterLabel]}>
+          Accueil
+        </Text>
+      </View>
+
+      {/* 4. Localisation (Right 1) */}
+      <TouchableOpacity
+        style={styles.tabItem}
+        onPress={() => onTabChange('locations')}
+        activeOpacity={0.7}
+      >
+        <MapPin
+          size={22}
+          color={isLocations ? '#2563EB' : '#94A3B8'}
+          strokeWidth={isLocations ? 2.5 : 1.8}
+        />
+        <Text style={[styles.tabLabel, isLocations && styles.activeTabLabel]}>
+          Location
+        </Text>
+      </TouchableOpacity>
+
+      {/* 5. Paramètres (Right 2) */}
       <TouchableOpacity
         style={styles.tabItem}
         onPress={() => onTabChange('settings')}
@@ -103,15 +94,10 @@ export const Footer: React.FC<FooterProps> = ({
       >
         <Settings
           size={22}
-          color={activeTab === 'settings' || activeTab === 'more' ? '#2563eb' : '#94a3b8'}
-          strokeWidth={activeTab === 'settings' || activeTab === 'more' ? 2.4 : 1.8}
+          color={isSettings ? '#2563EB' : '#94A3B8'}
+          strokeWidth={isSettings ? 2.5 : 1.8}
         />
-        <Text
-          style={[
-            styles.tabLabel,
-            (activeTab === 'settings' || activeTab === 'more') && styles.activeTabLabel,
-          ]}
-        >
+        <Text style={[styles.tabLabel, isSettings && styles.activeTabLabel]}>
           Paramètres
         </Text>
       </TouchableOpacity>
@@ -128,15 +114,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-around',
     paddingVertical: 8,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
+    borderTopColor: '#F1F5F9',
     paddingBottom: Platform.OS === 'ios' ? 24 : 10,
-    elevation: 8,
+    elevation: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
   tabItem: {
     flex: 1,
@@ -147,37 +133,48 @@ const styles = StyleSheet.create({
   tabLabel: {
     fontSize: 11,
     fontWeight: '500',
-    color: '#94a3b8',
-    marginTop: 3,
+    color: '#94A3B8',
+    marginTop: 4,
+    letterSpacing: -0.2,
   },
   activeTabLabel: {
-    color: '#2563eb',
+    color: '#2563EB',
     fontWeight: '700',
   },
   centerButtonWrapper: {
-    width: 60,
+    flex: 1.2,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: -16,
   },
   centerButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#1d4ed8',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#1D4ED8',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#1d4ed8',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    shadowColor: '#1D4ED8',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.35,
     shadowRadius: 6,
-    elevation: 6,
+    elevation: 8,
   },
-  activeCenterButton: {
-    backgroundColor: '#2563eb',
-    borderWidth: 2.5,
-    borderColor: '#dbeafe',
-    shadowColor: '#2563eb',
-    shadowOpacity: 0.55,
-    shadowRadius: 8,
+  centerButtonActive: {
+    backgroundColor: '#0B3E96',
+    transform: [{ scale: 1.05 }],
+    borderColor: '#EFF6FF',
+  },
+  centerLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748B',
+    marginTop: 2,
+  },
+  activeCenterLabel: {
+    color: '#1D4ED8',
+    fontWeight: '700',
   },
 });
