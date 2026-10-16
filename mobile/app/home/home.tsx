@@ -29,7 +29,7 @@ export interface HomeScreenProps {
   onSelectDirection?: (dir: 'MA_TO_FR' | 'FR_TO_MA') => void;
   onToggleDirection?: () => void;
   onLocationPress?: () => void;
-  onNavigateTab?: (tab: 'home' | 'colis' | 'clients' | 'locations' | 'settings') => void;
+  onNavigateTab?: (tab: 'home' | 'colis' | 'clients' | 'locations' | 'settings' | 'docs' | 'invoices') => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({

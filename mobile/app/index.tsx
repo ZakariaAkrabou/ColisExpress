@@ -5,6 +5,7 @@ import HomeScreen from './home/home';
 import ColisPage, { Colis } from './colis/colis_page';
 import ClientsPage, { Client } from './client/clientPage';
 import LocationsPage from './locations/locations_page';
+import DocsPage from './docs/docs_page';
 import SettingsPage from './settings_page';
 import Footer, { TabType } from '../components/layout/Footer';
 import SplashScreen from './auth/splash';
@@ -12,10 +13,11 @@ import LoginScreen from './auth/login';
 import { INITIAL_COLIS, INITIAL_CLIENTS } from '../services/mockData';
 
 type AppFlowState = 'splash' | 'login' | 'app';
+export type AppRoute = TabType;
 
 export default function AppScreen() {
   const [flowState, setFlowState] = useState<AppFlowState>('splash');
-  const [currentRoute, setCurrentRoute] = useState<TabType>('home');
+  const [currentRoute, setCurrentRoute] = useState<AppRoute>('home');
   const [direction, setDirection] = useState<'MA_TO_FR' | 'FR_TO_MA'>('MA_TO_FR');
   const [colisList, setColisList] = useState<Colis[]>(INITIAL_COLIS);
   const [clientsList, setClientsList] = useState<Client[]>(INITIAL_CLIENTS);
@@ -26,6 +28,12 @@ export default function AppScreen() {
 
   const handleAddColis = (newColis: Colis) => {
     setColisList([newColis, ...colisList]);
+  };
+
+  const handleUpdateColis = (updatedColis: Colis) => {
+    setColisList((prev) =>
+      prev.map((c) => (c.id === updatedColis.id ? updatedColis : c))
+    );
   };
 
   const handleAddClient = (newClient: Client) => {
@@ -60,6 +68,16 @@ export default function AppScreen() {
             direction={direction}
             colisList={colisList}
             onAddColis={handleAddColis}
+            onUpdateColis={handleUpdateColis}
+            onNavigateToDocs={() => setCurrentRoute('docs')}
+          />
+        );
+      case 'docs':
+        return (
+          <DocsPage
+            colisList={colisList}
+            direction={direction}
+            onNavigateToColis={() => setCurrentRoute('colis')}
           />
         );
       case 'locations':
@@ -75,7 +93,13 @@ export default function AppScreen() {
             }}
             onToggleDirection={toggleDirection}
             onLocationPress={() => setCurrentRoute('locations')}
-            onNavigateTab={(tab) => setCurrentRoute(tab)}
+            onNavigateTab={(tab) => {
+              if (tab === 'invoices' || tab === 'docs') {
+                setCurrentRoute('docs');
+              } else {
+                setCurrentRoute(tab);
+              }
+            }}
           />
         );
       case 'clients':
@@ -120,7 +144,13 @@ export default function AppScreen() {
             }}
             onToggleDirection={toggleDirection}
             onLocationPress={() => setCurrentRoute('locations')}
-            onNavigateTab={(tab) => setCurrentRoute(tab)}
+            onNavigateTab={(tab) => {
+              if (tab === 'invoices' || tab === 'docs') {
+                setCurrentRoute('docs');
+              } else {
+                setCurrentRoute(tab);
+              }
+            }}
           />
         );
     }
