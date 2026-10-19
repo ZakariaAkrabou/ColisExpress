@@ -7,6 +7,7 @@ import ClientsPage, { Client } from './client/clientPage';
 import LocationsPage from './locations/locations_page';
 import DocsPage from './docs/docs_page';
 import SettingsPage from './settings_page';
+import Header from '../components/layout/Header';
 import Footer, { TabType } from '../components/layout/Footer';
 import SplashScreen from './auth/splash';
 import LoginScreen from './auth/login';
@@ -160,6 +161,15 @@ export default function AppScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor="#0B3E96" />
       
+      {/* Top Application Header */}
+      {currentRoute !== 'home' && currentRoute !== 'docs' && (
+        <Header
+          direction={direction}
+          onLocationPress={() => setCurrentRoute('locations')}
+          onDocsPress={() => setCurrentRoute('docs')}
+        />
+      )}
+
       {/* Route Content View */}
       <View style={styles.content}>
         {renderCurrentRoute()}

@@ -130,27 +130,14 @@ export default function ColisPage({
           </Text>
         </View>
 
-        <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
-          {onNavigateToDocs && (
-            <TouchableOpacity
-              style={styles.docsNavButton}
-              onPress={() => onNavigateToDocs()}
-              activeOpacity={0.85}
-            >
-              <FileText size={15} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 4 }} />
-              <Text style={styles.docsNavButtonText}>Docs</Text>
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => setShowCreateModal(true)}
-            activeOpacity={0.85}
-          >
-            <Plus size={16} color="#FFFFFF" strokeWidth={2.5} style={{ marginRight: 4 }} />
-            <Text style={styles.addButtonText}>Nouveau</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => setShowCreateModal(true)}
+          activeOpacity={0.85}
+        >
+          <Plus size={16} color="#FFFFFF" strokeWidth={2.5} style={{ marginRight: 4 }} />
+          <Text style={styles.addButtonText}>Nouveau</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Search Bar */}
