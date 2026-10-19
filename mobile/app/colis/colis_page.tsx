@@ -9,11 +9,12 @@ import {
   Image,
   Linking,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Package, Plus, Search, MapPin, Phone, FileText } from 'lucide-react-native';
 
 import CreateColis, { Colis } from './create-colis';
 import ViewColis from './view_colis';
 import UpdateColis from './update_colis';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export { Colis };
 
@@ -22,18 +23,22 @@ export interface ColisPageProps {
   colisList: Colis[];
   onAddColis: (colis: Colis) => void;
   onUpdateColis?: (updatedColis: Colis) => void;
+  onNavigateToDocs?: (city?: string) => void;
 }
 
 const DEFAULT_PARCEL_IMAGE = 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=500';
+
 export default function ColisPage({
   direction,
   colisList,
   onAddColis,
   onUpdateColis,
+  onNavigateToDocs,
 }: ColisPageProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'in_transit' | 'delivered'>('all');
   const [cityFilter, setCityFilter] = useState('all');
+
   // Modal States
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [viewColis, setViewColis] = useState<Colis | null>(null);
@@ -41,7 +46,6 @@ export default function ColisPage({
 
   const [statusMenuVisible, setStatusMenuVisible] = useState(false);
   const [cityMenuVisible, setCityMenuVisible] = useState(false);
-
 
   const handleUpdate = (updated: Colis) => {
     if (onUpdateColis) {
@@ -59,7 +63,9 @@ export default function ColisPage({
       handleUpdate(updated);
     }
   };
-  const cities = ['all', ...Array.from(new Set(colisList.flatMap(c => [c.toCity, c.fromCity]).filter(Boolean)))];
+
+  const cities = ['all', ...Array.from(new Set(colisList.flatMap((c) => [c.toCity, c.fromCity]).filter(Boolean)))];
+
   const filteredColis = colisList.filter((item) => {
     const matchesSearch =
       item.id.toLowerCase().includes(search.toLowerCase()) ||
@@ -88,58 +94,74 @@ export default function ColisPage({
     }
   };
 
+  const getStatusTextStyle = (status: Colis['status']) => {
+    switch (status) {
+      case 'pending':
+        return styles.statusTextPending;
+      case 'in_transit':
+        return styles.statusTextTransit;
+      case 'delivered':
+        return styles.statusTextDelivered;
+    }
+  };
+
   const getStatusLabel = (status: Colis['status']) => {
     switch (status) {
       case 'pending':
-        return '⏳ Pending';
+        return '⏳ En attente';
       case 'in_transit':
-        return '🚚 Transit';
+        return '🚚 En transit';
       case 'delivered':
-        return '✅ Delivered';
+        return '✅ Livré';
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header Info */}
+      {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>Parcels Dashboard</Text>
+          <View style={styles.titleRow}>
+            <Package size={22} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
+            <Text style={styles.title}>Gestion des Colis</Text>
+          </View>
           <Text style={styles.subtitle}>
-            {direction === 'FR_TO_MA' ? '🇫🇷 France ➔ 🇲🇦 Morocco' : '🇲🇦 Morocco ➔ 🇫🇷 France'}
+            {direction === 'FR_TO_MA' ? '🇫🇷 France ➔ 🇲🇦 Maroc' : '🇲🇦 Maroc ➔ 🇫🇷 France'} • {filteredColis.length} colis
           </Text>
         </View>
+
         <TouchableOpacity
           style={styles.addButton}
           onPress={() => setShowCreateModal(true)}
           activeOpacity={0.85}
         >
-          <Text style={styles.addButtonText}>➕ New Colis</Text>
+          <Plus size={16} color="#FFFFFF" strokeWidth={2.5} style={{ marginRight: 4 }} />
+          <Text style={styles.addButtonText}>Nouveau</Text>
         </TouchableOpacity>
       </View>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <Text style={styles.searchIcon}>🔍</Text>
+        <Search size={18} color="#94a3b8" />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search parcels..."
+          placeholder="Rechercher par ID, nom, ville..."
           placeholderTextColor="#94a3b8"
           value={search}
           onChangeText={setSearch}
         />
         {search ? (
           <TouchableOpacity onPress={() => setSearch('')} style={styles.clearSearchBtn}>
-            <Text style={styles.clearSearchText}>✕</Text>
+            <Text style={styles.clearSearch}>✕</Text>
           </TouchableOpacity>
         ) : null}
       </View>
 
-      {/* Filter Row: Status (left) & City (right) */}
+      {/* Filter Row: Status & City Dropdowns */}
       <View style={styles.filterRow}>
         {/* Status Dropdown */}
         <View style={styles.dropdownWrapper}>
-          <Text style={styles.dropdownLabel}>Status</Text>
+          <Text style={styles.dropdownLabel}>Statut</Text>
           <TouchableOpacity
             style={[styles.dropdownToggle, statusMenuVisible && styles.dropdownToggleActive]}
             onPress={() => {
@@ -148,14 +170,14 @@ export default function ColisPage({
             }}
             activeOpacity={0.8}
           >
-            <Text style={styles.dropdownToggleText}>
+            <Text style={styles.dropdownToggleText} numberOfLines={1}>
               {statusFilter === 'all'
-                ? `All (${colisList.length})`
+                ? `Tous (${colisList.length})`
                 : statusFilter === 'pending'
-                  ? `⏳ Pending (${colisList.filter(c => c.status === 'pending').length})`
-                  : statusFilter === 'in_transit'
-                    ? `🚚 Transit (${colisList.filter(c => c.status === 'in_transit').length})`
-                    : `✅ Delivered (${colisList.filter(c => c.status === 'delivered').length})`}
+                ? `En attente (${colisList.filter((c) => c.status === 'pending').length})`
+                : statusFilter === 'in_transit'
+                ? `En transit (${colisList.filter((c) => c.status === 'in_transit').length})`
+                : `Livré (${colisList.filter((c) => c.status === 'delivered').length})`}
             </Text>
             <Text style={styles.dropdownChevron}>{statusMenuVisible ? '▲' : '▼'}</Text>
           </TouchableOpacity>
@@ -163,10 +185,18 @@ export default function ColisPage({
             <View style={styles.dropdownMenu}>
               {(['all', 'pending', 'in_transit', 'delivered'] as const).map((filter) => {
                 const isActive = statusFilter === filter;
-                const count = filter === 'all'
-                  ? colisList.length
-                  : colisList.filter(c => c.status === filter).length;
-                const label = filter === 'all' ? 'All' : filter === 'pending' ? '⏳ Pending' : filter === 'in_transit' ? '🚚 Transit' : '✅ Delivered';
+                const count =
+                  filter === 'all'
+                    ? colisList.length
+                    : colisList.filter((c) => c.status === filter).length;
+                const label =
+                  filter === 'all'
+                    ? 'Tous'
+                    : filter === 'pending'
+                    ? 'En attente'
+                    : filter === 'in_transit'
+                    ? 'En transit'
+                    : 'Livré';
                 return (
                   <TouchableOpacity
                     key={filter}
@@ -189,7 +219,7 @@ export default function ColisPage({
 
         {/* City Dropdown */}
         <View style={styles.dropdownWrapper}>
-          <Text style={styles.dropdownLabel}>City</Text>
+          <Text style={styles.dropdownLabel}>Ville</Text>
           <TouchableOpacity
             style={[styles.dropdownToggle, cityMenuVisible && styles.dropdownToggleActive]}
             onPress={() => {
@@ -198,8 +228,8 @@ export default function ColisPage({
             }}
             activeOpacity={0.8}
           >
-            <Text style={styles.dropdownToggleText}>
-              {cityFilter === 'all' ? 'All Cities' : cityFilter}
+            <Text style={styles.dropdownToggleText} numberOfLines={1}>
+              {cityFilter === 'all' ? 'Toutes les villes' : cityFilter}
             </Text>
             <Text style={styles.dropdownChevron}>{cityMenuVisible ? '▲' : '▼'}</Text>
           </TouchableOpacity>
@@ -217,7 +247,7 @@ export default function ColisPage({
                     }}
                   >
                     <Text style={[styles.dropdownItemText, isActive && styles.dropdownItemTextActive]}>
-                      {city === 'all' ? 'All Cities' : city}
+                      {city === 'all' ? 'Toutes les villes' : city}
                     </Text>
                     {isActive && <Text style={styles.dropdownCheck}>✓</Text>}
                   </TouchableOpacity>
@@ -232,9 +262,9 @@ export default function ColisPage({
       <ScrollView contentContainerStyle={styles.listScrollContent} showsVerticalScrollIndicator={false}>
         {filteredColis.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>📦</Text>
-            <Text style={styles.emptyText}>No parcels found</Text>
-            <Text style={styles.emptySubtext}>Try adjusting your search query or filter</Text>
+            <Package size={42} color="#cbd5e1" strokeWidth={1.5} />
+            <Text style={styles.emptyText}>Aucun colis trouvé</Text>
+            <Text style={styles.emptySubtext}>Essayez de modifier votre recherche ou vos filtres</Text>
           </View>
         ) : (
           <View style={styles.gridTwoByTwoContainer}>
@@ -268,7 +298,9 @@ export default function ColisPage({
                     <View style={styles.cardImageOverlay}>
                       <Text style={styles.trackingIdTag}>{item.id}</Text>
                       <View style={[styles.statusBadge, getStatusStyle(item.status)]}>
-                        <Text style={styles.statusText}>{getStatusLabel(item.status)}</Text>
+                        <Text style={[styles.statusText, getStatusTextStyle(item.status)]}>
+                          {getStatusLabel(item.status)}
+                        </Text>
                       </View>
                     </View>
                   </View>
@@ -284,29 +316,20 @@ export default function ColisPage({
                       </View>
                     </View>
 
-                    {/* Route
-                    <View style={styles.routeHeader}>
-                      <Text style={styles.routeCityText} numberOfLines={1}>
-                        {item.fromCity}
-                      </Text>
-                      <Text style={styles.routeArrowText}>➔</Text>
-                      <Text style={styles.routeCityText} numberOfLines={1}>
-                        {item.toCity}
-                      </Text>
-                    </View> */}
-
-                    {/* Sender (left) & Receiver (right) */}
+                    {/* Sender & Receiver Info */}
                     <View style={styles.senderReceiverRow}>
-                      {/* Sender - Left Side */}
+                      {/* Sender */}
                       <View style={styles.personColumn}>
+                        <Text style={styles.personColumnLabel}>Expéditeur</Text>
                         <Text style={styles.personName} numberOfLines={1}>{item.senderName}</Text>
                         <Text style={styles.personDetail} numberOfLines={1}>📍 {item.fromCity}</Text>
                         <Text style={styles.personDetail} numberOfLines={1}>📞 {item.senderPhone}</Text>
                       </View>
                       {/* Divider */}
                       <View style={styles.personDivider} />
-                      {/* Receiver - Right Side */}
+                      {/* Receiver */}
                       <View style={styles.personColumn}>
+                        <Text style={styles.personColumnLabel}>Destinataire</Text>
                         <Text style={styles.personName} numberOfLines={1}>{item.receiverName}</Text>
                         <Text style={styles.personDetail} numberOfLines={1}>📍 {item.toCity}</Text>
                         <Text style={styles.personDetail} numberOfLines={1}>📞 {item.receiverPhone}</Text>
@@ -316,17 +339,17 @@ export default function ColisPage({
                     {/* Specs footer */}
                     <View style={styles.cardFooterGrid}>
                       <View style={styles.miniMetric}>
-                        <Text style={styles.miniMetricLabel}>Qty</Text>
+                        <Text style={styles.miniMetricLabel}>Qté</Text>
                         <Text style={styles.miniMetricVal}>{item.quantity ?? 1}</Text>
                       </View>
                       <View style={styles.miniMetricDivider} />
                       <View style={styles.miniMetric}>
-                        <Text style={styles.miniMetricLabel}>Weight</Text>
+                        <Text style={styles.miniMetricLabel}>Poids</Text>
                         <Text style={styles.miniMetricVal}>{item.weight} kg</Text>
                       </View>
                       <View style={styles.miniMetricDivider} />
                       <View style={styles.miniMetric}>
-                        <Text style={styles.miniMetricLabel}>Price</Text>
+                        <Text style={styles.miniMetricLabel}>Prix</Text>
                         <Text style={styles.miniMetricValHighlight}>{item.price} MAD</Text>
                       </View>
                     </View>
@@ -337,14 +360,14 @@ export default function ColisPage({
                         style={styles.viewActionBtn}
                         onPress={() => setViewColis(item)}
                       >
-                        <Text style={styles.viewActionText}>👁️ View</Text>
+                        <Text style={styles.viewActionText}>👁️ Détails</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
                         style={styles.editActionBtn}
                         onPress={() => setEditColis(item)}
                       >
-                        <Text style={styles.editActionText}>✏️ Edit</Text>
+                        <Text style={styles.editActionText}>✏️ Modifier</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -355,7 +378,7 @@ export default function ColisPage({
         )}
       </ScrollView>
 
-      {/* --- SEPARATE MODALS --- */}
+      {/* --- MODALS --- */}
       <CreateColis
         visible={showCreateModal}
         direction={direction}
@@ -372,6 +395,7 @@ export default function ColisPage({
           setEditColis(colisToEdit);
         }}
         onStatusChange={handleStatusQuickChange}
+        onOpenDocs={onNavigateToDocs}
       />
 
       <UpdateColis
@@ -388,76 +412,91 @@ export default function ColisPage({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#f8fafc',
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
   header: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 14,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '800',
-    color: '#f8fafc',
+    color: '#0f172a',
   },
   subtitle: {
-    fontSize: 12,
-    color: '#38bdf8',
-    fontWeight: '600',
+    color: '#64748b',
+    fontSize: 13,
     marginTop: 2,
+    fontWeight: '500',
   },
   addButton: {
-    backgroundColor: '#3b82f6',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
+    backgroundColor: '#2563eb',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
   },
   addButtonText: {
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: 12,
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  docsNavButton: {
+    backgroundColor: '#eff6ff',
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  docsNavButtonText: {
+    color: '#1d4ed8',
+    fontWeight: '700',
+    fontSize: 13,
   },
   searchContainer: {
     flexDirection: 'row',
-    backgroundColor: '#1e293b',
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 10,
-    paddingHorizontal: 12,
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#334155',
-  },
-  searchIcon: {
-    fontSize: 14,
-    marginRight: 8,
+    borderColor: '#e2e8f0',
+    paddingHorizontal: 12,
+    marginBottom: 12,
   },
   searchInput: {
     flex: 1,
-    height: 38,
-    color: '#f8fafc',
-    fontSize: 13,
+    color: '#0f172a',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    fontSize: 14,
   },
   clearSearchBtn: {
     padding: 4,
   },
-  clearSearchText: {
+  clearSearch: {
     color: '#94a3b8',
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 14,
   },
   filterRow: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    marginBottom: 6,
+    marginBottom: 12,
     gap: 8,
   },
   dropdownWrapper: {
@@ -465,37 +504,42 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   dropdownLabel: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '700',
     color: '#64748b',
-    marginBottom: 3,
+    marginBottom: 4,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 0.6,
   },
   dropdownToggle: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#1e293b',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#334155',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    borderColor: '#e2e8f0',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 2,
+    elevation: 1,
   },
   dropdownToggleActive: {
-    borderColor: '#38bdf8',
-    backgroundColor: '#1a2744',
+    borderColor: '#2563eb',
+    backgroundColor: '#eff6ff',
   },
   dropdownToggleText: {
-    color: '#f8fafc',
-    fontSize: 11,
+    color: '#0f172a',
+    fontSize: 12,
     fontWeight: '600',
     flex: 1,
   },
   dropdownChevron: {
-    color: '#94a3b8',
-    fontSize: 8,
+    color: '#64748b',
+    fontSize: 9,
     marginLeft: 4,
   },
   dropdownMenu: {
@@ -503,15 +547,15 @@ const styles = StyleSheet.create({
     top: '100%',
     left: 0,
     right: 0,
-    marginTop: 2,
-    backgroundColor: '#1e293b',
+    marginTop: 4,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#334155',
-    borderRadius: 8,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: '#0f172a',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 10,
     zIndex: 100,
@@ -520,32 +564,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#293548',
+    borderBottomColor: '#f1f5f9',
   },
   dropdownItemActive: {
-    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+    backgroundColor: '#eff6ff',
   },
   dropdownItemText: {
-    color: '#cbd5e1',
-    fontSize: 11,
+    color: '#334155',
+    fontSize: 12,
     fontWeight: '500',
   },
   dropdownItemTextActive: {
-    color: '#38bdf8',
+    color: '#1e40af',
     fontWeight: '700',
   },
   dropdownCheck: {
-    color: '#38bdf8',
+    color: '#2563eb',
     fontSize: 12,
     fontWeight: '800',
   },
   listScrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 40,
+    paddingBottom: 30,
   },
   // 2-by-2 Grid Layout Styles
   gridTwoByTwoContainer: {
@@ -554,18 +596,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   gridCard: {
-    width: '48.5%', // Two side-by-side per row
-    backgroundColor: '#1e293b',
+    width: '48.5%',
+    backgroundColor: '#FFFFFF',
     borderRadius: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#f1f5f9',
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
   },
   whatsappButton: {
     position: 'absolute',
@@ -580,9 +622,9 @@ const styles = StyleSheet.create({
     zIndex: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 3,
-    elevation: 5,
+    elevation: 4,
   },
   whatsappIcon: {
     fontSize: 14,
@@ -591,6 +633,7 @@ const styles = StyleSheet.create({
     height: 95,
     width: '100%',
     position: 'relative',
+    backgroundColor: '#f1f5f9',
   },
   cardImage: {
     width: '100%',
@@ -602,91 +645,82 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(15, 23, 42, 0.75)',
-    paddingHorizontal: 6,
-    paddingVertical: 4,
+    backgroundColor: 'rgba(15, 23, 42, 0.72)',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   trackingIdTag: {
-    color: '#38bdf8',
+    color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '800',
   },
   statusBadge: {
     paddingVertical: 2,
     paddingHorizontal: 6,
-    borderRadius: 4,
+    borderRadius: 6,
   },
   statusPending: {
-    backgroundColor: 'rgba(245, 158, 11, 0.25)',
+    backgroundColor: '#fef3c7',
   },
   statusTransit: {
-    backgroundColor: 'rgba(59, 130, 246, 0.25)',
+    backgroundColor: '#dbeafe',
   },
   statusDelivered: {
-    backgroundColor: 'rgba(16, 185, 129, 0.25)',
+    backgroundColor: '#dcfce7',
   },
   statusText: {
     fontSize: 9,
     fontWeight: '700',
-    color: '#fff',
+  },
+  statusTextPending: {
+    color: '#b45309',
+  },
+  statusTextTransit: {
+    color: '#1d4ed8',
+  },
+  statusTextDelivered: {
+    color: '#15803d',
   },
   cardContent: {
-    padding: 8,
+    padding: 10,
   },
   paymentTagRow: {
-    marginBottom: 4,
+    marginBottom: 6,
   },
   paidChip: {
     alignSelf: 'flex-start',
     paddingVertical: 2,
-    paddingHorizontal: 6,
-    borderRadius: 4,
+    paddingHorizontal: 7,
+    borderRadius: 6,
   },
   paidChipSuccess: {
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    backgroundColor: '#dcfce7',
   },
   paidChipDanger: {
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: '#fee2e2',
   },
   paidChipText: {
     fontSize: 9,
     fontWeight: '800',
   },
   paidTextSuccess: {
-    color: '#10b981',
+    color: '#15803d',
   },
   paidTextDanger: {
-    color: '#ef4444',
-  },
-  routeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  routeCityText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#f8fafc',
-    flex: 1,
-  },
-  routeArrowText: {
-    fontSize: 11,
-    color: '#38bdf8',
-    marginHorizontal: 2,
+    color: '#b91c1c',
   },
   senderReceiverRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#0f172a',
-    borderRadius: 6,
-    padding: 6,
-    marginBottom: 4,
+    backgroundColor: '#f8fafc',
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 6,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#e2e8f0',
   },
   personColumn: {
     flex: 1,
@@ -694,41 +728,41 @@ const styles = StyleSheet.create({
   personColumnLabel: {
     fontSize: 8,
     fontWeight: '800',
-    color: '#38bdf8',
+    color: '#2563eb',
     marginBottom: 2,
     textTransform: 'uppercase',
   },
   personName: {
-    fontSize: 8,
+    fontSize: 9,
     fontWeight: '700',
-    color: '#f8fafc',
+    color: '#0f172a',
     marginBottom: 1,
   },
   personDetail: {
-    fontSize: 7,
-    color: '#94a3b8',
+    fontSize: 8,
+    color: '#64748b',
     fontWeight: '500',
   },
   personDivider: {
     width: 1,
-    backgroundColor: '#334155',
+    backgroundColor: '#e2e8f0',
     marginHorizontal: 6,
   },
   cardFooterGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#0f172a',
+    backgroundColor: '#f8fafc',
     padding: 6,
-    borderRadius: 6,
-    marginVertical: 4,
+    borderRadius: 8,
+    marginBottom: 6,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#e2e8f0',
   },
   miniMetricDivider: {
     width: 1,
     height: '80%',
-    backgroundColor: '#334155',
+    backgroundColor: '#e2e8f0',
   },
   miniMetric: {
     alignItems: 'center',
@@ -740,69 +774,65 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   miniMetricVal: {
-    fontSize: 7,
+    fontSize: 9,
     fontWeight: '700',
-    color: '#f8fafc',
+    color: '#0f172a',
     marginTop: 1,
   },
   miniMetricValHighlight: {
-    fontSize: 7,
+    fontSize: 9,
     fontWeight: '800',
-    color: '#38bdf8',
+    color: '#1d4ed8',
     marginTop: 1,
   },
   cardActionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 2,
+    gap: 6,
   },
   viewActionBtn: {
     flex: 1,
-    backgroundColor: '#0f172a',
-    paddingVertical: 5,
-    borderRadius: 6,
+    backgroundColor: '#eff6ff',
+    paddingVertical: 6,
+    borderRadius: 8,
     alignItems: 'center',
-    marginRight: 3,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#bfdbfe',
   },
   viewActionText: {
     fontSize: 10,
-    color: '#38bdf8',
+    color: '#1d4ed8',
     fontWeight: '700',
   },
   editActionBtn: {
     flex: 1,
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
-    paddingVertical: 5,
-    borderRadius: 6,
+    backgroundColor: '#fef3c7',
+    paddingVertical: 6,
+    borderRadius: 8,
     alignItems: 'center',
-    marginLeft: 3,
     borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.3)',
+    borderColor: '#fde68a',
   },
   editActionText: {
     fontSize: 10,
-    color: '#f59e0b',
+    color: '#d97706',
     fontWeight: '700',
   },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 60,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 10,
+    gap: 8,
   },
   emptyText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#f8fafc',
+    color: '#0f172a',
   },
   emptySubtext: {
     fontSize: 13,
     color: '#94a3b8',
-    marginTop: 4,
+    fontWeight: '500',
   },
 });

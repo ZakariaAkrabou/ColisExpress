@@ -10,6 +10,7 @@ import {
   Alert,
   Image,
 } from 'react-native';
+import { Edit3, X, Check } from 'lucide-react-native';
 import { Colis } from './create-colis';
 
 export interface UpdateColisProps {
@@ -71,7 +72,7 @@ export default function UpdateColis({
 
   const handleUpdateSubmit = () => {
     if (!senderName.trim() || !receiverName.trim() || !fromCity.trim() || !toCity.trim() || !weight.trim() || !price.trim()) {
-      Alert.alert('Missing Fields', 'Please fill in all required fields marked with *');
+      Alert.alert('Champs obligatoires', 'Veuillez remplir tous les champs obligatoires marqués d\'un *');
       return;
     }
 
@@ -109,17 +110,19 @@ export default function UpdateColis({
           {/* Header */}
           <View style={styles.modalHeader}>
             <View style={styles.headerTitleContainer}>
-              <Text style={styles.modalIcon}>✏️</Text>
-              <Text style={styles.modalTitle}>Update Colis ({colis.id})</Text>
+              <View style={styles.headerIconBadge}>
+                <Edit3 size={18} color="#d97706" strokeWidth={2.4} />
+              </View>
+              <Text style={styles.modalTitle}>Modifier Colis ({colis.id})</Text>
             </View>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Text style={styles.closeButtonText}>✕</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose} activeOpacity={0.7}>
+              <X size={18} color="#64748b" />
             </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
             {/* Status Selection */}
-            <Text style={styles.formSectionTitle}>⚡ Shipment Status</Text>
+            <Text style={styles.formSectionTitle}>⚡ Statut de l'envoi</Text>
             <View style={styles.statusPickerRow}>
               {(['pending', 'in_transit', 'delivered'] as const).map((st) => (
                 <TouchableOpacity
@@ -129,6 +132,7 @@ export default function UpdateColis({
                     status === st && styles.statusChipActive,
                   ]}
                   onPress={() => setStatus(st)}
+                  activeOpacity={0.8}
                 >
                   <Text
                     style={[
@@ -136,14 +140,14 @@ export default function UpdateColis({
                       status === st && styles.statusChipActiveText,
                     ]}
                   >
-                    {st === 'pending' ? '⏳ Pending' : st === 'in_transit' ? '🚚 In Transit' : '✅ Delivered'}
+                    {st === 'pending' ? '⏳ En attente' : st === 'in_transit' ? '🚚 En transit' : '✅ Livré'}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             {/* Radio Buttons for Payment Status */}
-            <Text style={styles.formSectionTitle}>💳 Payment Status (Payé)</Text>
+            <Text style={styles.formSectionTitle}>💳 Statut de paiement (Payé)</Text>
             <View style={styles.radioGroup}>
               <TouchableOpacity
                 style={[
@@ -167,7 +171,7 @@ export default function UpdateColis({
                     isPaid === true && styles.radioTextSelectedSuccess,
                   ]}
                 >
-                  Oui / Yes (Paid)
+                  Oui (Payé)
                 </Text>
               </TouchableOpacity>
 
@@ -193,13 +197,13 @@ export default function UpdateColis({
                     isPaid === false && styles.radioTextSelectedDanger,
                   ]}
                 >
-                  Non / No (Unpaid)
+                  Non (Non Payé)
                 </Text>
               </TouchableOpacity>
             </View>
 
             {/* Radio Buttons for Delivery Mode */}
-            <Text style={styles.formSectionTitle}>🏠 Delivery Mode (Mode de livraison)</Text>
+            <Text style={styles.formSectionTitle}>🏠 Mode de livraison</Text>
             <View style={styles.radioGroup}>
               <TouchableOpacity
                 style={[
@@ -255,7 +259,7 @@ export default function UpdateColis({
             </View>
 
             {/* Image Selection */}
-            <Text style={styles.formSectionTitle}>🖼️ Parcel Photo / Image</Text>
+            <Text style={styles.formSectionTitle}>🖼️ Photo du colis</Text>
             <View style={styles.imageSelectorContainer}>
               {PRESET_IMAGES.map((imgUrl, index) => (
                 <TouchableOpacity
@@ -265,11 +269,12 @@ export default function UpdateColis({
                     image === imgUrl && styles.presetImageSelected,
                   ]}
                   onPress={() => setImage(imgUrl)}
+                  activeOpacity={0.85}
                 >
                   <Image source={{ uri: imgUrl }} style={styles.presetImage} />
                   {image === imgUrl && (
                     <View style={styles.selectedCheckOverlay}>
-                      <Text style={styles.checkText}>✓</Text>
+                      <Check size={12} color="#FFFFFF" strokeWidth={3} />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -277,24 +282,24 @@ export default function UpdateColis({
             </View>
             <TextInput
               style={styles.formInput}
-              placeholder="Or paste custom Image URL"
+              placeholder="Ou URL personnalisée de l'image"
               placeholderTextColor="#94a3b8"
               value={image}
               onChangeText={setImage}
             />
 
             {/* Sender Details */}
-            <Text style={styles.formSectionTitle}>👤 Sender Details</Text>
+            <Text style={styles.formSectionTitle}>👤 Expéditeur (Départ)</Text>
             <TextInput
               style={styles.formInput}
-              placeholder="Sender Name *"
+              placeholder="Nom complet de l'expéditeur *"
               placeholderTextColor="#94a3b8"
               value={senderName}
               onChangeText={setSenderName}
             />
             <TextInput
               style={styles.formInput}
-              placeholder="Sender Phone Number"
+              placeholder="Téléphone de l'expéditeur"
               placeholderTextColor="#94a3b8"
               keyboardType="phone-pad"
               value={senderPhone}
@@ -302,24 +307,24 @@ export default function UpdateColis({
             />
             <TextInput
               style={styles.formInput}
-              placeholder="Sender Origin City *"
+              placeholder="Ville de départ *"
               placeholderTextColor="#94a3b8"
               value={fromCity}
               onChangeText={setFromCity}
             />
 
             {/* Receiver Details */}
-            <Text style={styles.formSectionTitle}>📍 Receiver Details</Text>
+            <Text style={styles.formSectionTitle}>📍 Destinataire (Arrivée)</Text>
             <TextInput
               style={styles.formInput}
-              placeholder="Receiver Name *"
+              placeholder="Nom complet du destinataire *"
               placeholderTextColor="#94a3b8"
               value={receiverName}
               onChangeText={setReceiverName}
             />
             <TextInput
               style={styles.formInput}
-              placeholder="Receiver Phone Number"
+              placeholder="Téléphone du destinataire"
               placeholderTextColor="#94a3b8"
               keyboardType="phone-pad"
               value={receiverPhone}
@@ -327,18 +332,18 @@ export default function UpdateColis({
             />
             <TextInput
               style={styles.formInput}
-              placeholder="Receiver Destination City *"
+              placeholder="Ville de destination *"
               placeholderTextColor="#94a3b8"
               value={toCity}
               onChangeText={setToCity}
             />
 
             {/* Package Specifications */}
-            <Text style={styles.formSectionTitle}>📦 Package Specs</Text>
+            <Text style={styles.formSectionTitle}>📦 Spécifications du colis</Text>
             <View style={styles.specInputRow}>
               <TextInput
                 style={[styles.formInput, { flex: 1, marginRight: 6 }]}
-                placeholder="Weight (kg) *"
+                placeholder="Poids (kg) *"
                 placeholderTextColor="#94a3b8"
                 keyboardType="numeric"
                 value={weight}
@@ -346,7 +351,7 @@ export default function UpdateColis({
               />
               <TextInput
                 style={[styles.formInput, { flex: 1, marginRight: 6 }]}
-                placeholder="Qty *"
+                placeholder="Qté *"
                 placeholderTextColor="#94a3b8"
                 keyboardType="numeric"
                 value={quantity}
@@ -354,7 +359,7 @@ export default function UpdateColis({
               />
               <TextInput
                 style={[styles.formInput, { flex: 1 }]}
-                placeholder="Price (€) *"
+                placeholder="Prix (MAD) *"
                 placeholderTextColor="#94a3b8"
                 keyboardType="numeric"
                 value={price}
@@ -364,7 +369,7 @@ export default function UpdateColis({
 
             <TextInput
               style={[styles.formInput, styles.textArea]}
-              placeholder="Package Description"
+              placeholder="Description du contenu / Notes"
               placeholderTextColor="#94a3b8"
               multiline={true}
               numberOfLines={3}
@@ -372,8 +377,12 @@ export default function UpdateColis({
               onChangeText={setDescription}
             />
 
-            <TouchableOpacity style={styles.formSubmitButton} onPress={handleUpdateSubmit} activeOpacity={0.85}>
-              <Text style={styles.formSubmitText}>Save Changes</Text>
+            <TouchableOpacity
+              style={styles.formSubmitButton}
+              onPress={handleUpdateSubmit}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.formSubmitText}>Enregistrer les modifications</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -385,88 +394,96 @@ export default function UpdateColis({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     justifyContent: 'flex-end',
   },
   modalContentLarge: {
-    backgroundColor: '#1e293b',
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
-    maxHeight: '90%',
-    borderColor: '#334155',
+    maxHeight: '92%',
+    borderColor: '#e2e8f0',
     borderWidth: 1,
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 10,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#334155',
+    borderBottomColor: '#f1f5f9',
     paddingBottom: 14,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   headerTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  modalIcon: {
-    fontSize: 20,
+  headerIconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#fef3c7',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 8,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#f8fafc',
+    color: '#0f172a',
   },
   closeButton: {
-    padding: 6,
-    borderRadius: 20,
-    backgroundColor: '#0f172a',
-  },
-  closeButtonText: {
-    fontSize: 16,
-    color: '#94a3b8',
-    fontWeight: '700',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f1f5f9',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalBody: {
     marginBottom: 10,
   },
   formSectionTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
-    color: '#38bdf8',
-    marginTop: 12,
+    color: '#1d4ed8',
+    marginTop: 14,
     marginBottom: 8,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
   },
   statusPickerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 8,
+    gap: 6,
   },
   statusChip: {
     flex: 1,
     paddingVertical: 10,
-    marginHorizontal: 3,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#f8fafc',
     borderRadius: 10,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#e2e8f0',
   },
   statusChipActive: {
-    backgroundColor: '#f59e0b',
-    borderColor: '#f59e0b',
+    backgroundColor: '#dbeafe',
+    borderColor: '#2563eb',
   },
   statusChipText: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: '#64748b',
     fontWeight: '700',
   },
   statusChipActiveText: {
-    color: '#0f172a',
+    color: '#1d4ed8',
     fontWeight: '800',
   },
 
@@ -474,40 +491,40 @@ const styles = StyleSheet.create({
   radioGroup: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 6,
+    gap: 8,
   },
   radioButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0f172a',
-    paddingVertical: 12,
+    backgroundColor: '#f8fafc',
+    paddingVertical: 11,
     paddingHorizontal: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#334155',
-    marginRight: 6,
+    borderColor: '#e2e8f0',
   },
   radioButtonSelectedSuccess: {
-    borderColor: '#10b981',
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderColor: '#22c55e',
+    backgroundColor: '#f0fdf4',
   },
   radioButtonSelectedDanger: {
     borderColor: '#ef4444',
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: '#fef2f2',
   },
   radioCircle: {
     height: 18,
     width: 18,
     borderRadius: 9,
     borderWidth: 2,
-    borderColor: '#64748b',
+    borderColor: '#94a3b8',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
   },
   radioCircleSelectedSuccess: {
-    borderColor: '#10b981',
+    borderColor: '#22c55e',
   },
   radioCircleSelectedDanger: {
     borderColor: '#ef4444',
@@ -516,7 +533,7 @@ const styles = StyleSheet.create({
     height: 9,
     width: 9,
     borderRadius: 4.5,
-    backgroundColor: '#10b981',
+    backgroundColor: '#22c55e',
   },
   radioInnerCircleDanger: {
     height: 9,
@@ -527,33 +544,34 @@ const styles = StyleSheet.create({
   radioText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#94a3b8',
+    color: '#64748b',
   },
   radioTextSelectedSuccess: {
-    color: '#10b981',
+    color: '#15803d',
     fontWeight: '800',
   },
   radioTextSelectedDanger: {
-    color: '#ef4444',
+    color: '#b91c1c',
     fontWeight: '800',
   },
 
   imageSelectorContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   presetImageWrapper: {
     width: '23%',
     height: 60,
-    borderRadius: 8,
+    borderRadius: 10,
     overflow: 'hidden',
     borderWidth: 2,
-    borderColor: '#334155',
+    borderColor: '#e2e8f0',
     position: 'relative',
+    backgroundColor: '#f1f5f9',
   },
   presetImageSelected: {
-    borderColor: '#3b82f6',
+    borderColor: '#2563eb',
   },
   presetImage: {
     width: '100%',
@@ -562,30 +580,25 @@ const styles = StyleSheet.create({
   },
   selectedCheckOverlay: {
     position: 'absolute',
-    top: 2,
-    right: 2,
-    backgroundColor: '#3b82f6',
-    borderRadius: 10,
+    top: 3,
+    right: 3,
+    backgroundColor: '#2563eb',
+    borderRadius: 9,
     width: 18,
     height: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkText: {
-    color: '#ffffff',
-    fontSize: 10,
-    fontWeight: '900',
-  },
   formInput: {
-    backgroundColor: '#0f172a',
+    backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: '#f8fafc',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: '#0f172a',
     fontSize: 14,
     borderWidth: 1,
-    borderColor: '#334155',
-    marginBottom: 10,
+    borderColor: '#e2e8f0',
+    marginBottom: 8,
   },
   specInputRow: {
     flexDirection: 'row',
@@ -596,21 +609,21 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   formSubmitButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#2563eb',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 16,
-    marginBottom: 30,
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
+    marginBottom: 26,
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
   },
   formSubmitText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '800',
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

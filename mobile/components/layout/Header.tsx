@@ -8,7 +8,7 @@ import {
   StatusBar,
   Image,
 } from 'react-native';
-import { Bell, MapPin } from 'lucide-react-native';
+import { Bell, MapPin, FileText } from 'lucide-react-native';
 
 export interface HeaderProps {
   direction?: 'MA_TO_FR' | 'FR_TO_MA';
@@ -19,6 +19,7 @@ export interface HeaderProps {
   subtitle?: string;
   location?: string;
   onLocationPress?: () => void;
+  onDocsPress?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -29,6 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
   subtitle,
   location,
   onLocationPress,
+  onDocsPress,
 }) => {
   const displayLocation =
     location ||
@@ -69,11 +71,23 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right Actions */}
         <View style={styles.rightActions}>
+          {onDocsPress ? (
+            <TouchableOpacity
+              onPress={onDocsPress}
+              activeOpacity={0.7}
+              style={styles.actionButton}
+              accessibilityLabel="Documents & Impression"
+              accessibilityRole="button"
+            >
+              <FileText size={18} color="#FFFFFF" strokeWidth={2.2} />
+            </TouchableOpacity>
+          ) : null}
+
           {onLocationPress ? (
             <TouchableOpacity
               onPress={onLocationPress}
               activeOpacity={0.7}
-              style={styles.locationButton}
+              style={styles.actionButton}
               accessibilityLabel="Afficher les localisations"
               accessibilityRole="button"
             >
@@ -166,6 +180,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    marginRight: 4,
   },
   locationButton: {
     width: 36,

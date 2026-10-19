@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Home, Package, Users, MapPin, Settings } from 'lucide-react-native';
 
-export type TabType = 'home' | 'colis' | 'clients' | 'locations' | 'settings' | 'more';
+export type TabType = 'home' | 'colis' | 'clients' | 'locations' | 'settings' | 'more' | 'docs';
 
 export interface FooterProps {
   activeTab: TabType;
@@ -15,7 +15,7 @@ export const Footer: React.FC<FooterProps> = ({
   onTabChange,
 }) => {
   const isHome = activeTab === 'home';
-  const isColis = activeTab === 'colis';
+  const isColis = activeTab === 'colis' || activeTab === 'docs';
   const isClients = activeTab === 'clients';
   const isLocations = activeTab === 'locations';
   const isSettings = activeTab === 'settings' || activeTab === 'more';
@@ -128,10 +128,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
+    paddingVertical: 2,
+    minWidth: 0,
   },
   tabLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '500',
     color: '#94A3B8',
     marginTop: 4,
