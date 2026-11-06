@@ -7,13 +7,17 @@ import ClientsPage, { Client } from './client/clientPage';
 import LocationsPage from './locations/locations_page';
 import DocsPage from './docs/docs_page';
 import SettingsPage from './settings_page';
+import WherehouseWorkersPage, {
+  WarehouseWorker,
+  INITIAL_WAREHOUSE_WORKERS,
+} from './wherehouse_workers';
 import Footer, { TabType } from '../components/layout/Footer';
 import SplashScreen from './auth/splash';
 import LoginScreen from './auth/login';
 import { INITIAL_COLIS, INITIAL_CLIENTS } from '../services/mockData';
 
 type AppFlowState = 'splash' | 'login' | 'app';
-export type AppRoute = TabType;
+export type AppRoute = TabType | 'wherehouse_workers';
 
 export default function AppScreen() {
   const [flowState, setFlowState] = useState<AppFlowState>('splash');
@@ -21,6 +25,9 @@ export default function AppScreen() {
   const [direction, setDirection] = useState<'MA_TO_FR' | 'FR_TO_MA'>('MA_TO_FR');
   const [colisList, setColisList] = useState<Colis[]>(INITIAL_COLIS);
   const [clientsList, setClientsList] = useState<Client[]>(INITIAL_CLIENTS);
+  const [warehouseWorkersList, setWarehouseWorkersList] = useState<WarehouseWorker[]>(
+    INITIAL_WAREHOUSE_WORKERS
+  );
 
   const toggleDirection = () => {
     setDirection((prev) => (prev === 'MA_TO_FR' ? 'FR_TO_MA' : 'MA_TO_FR'));
@@ -112,6 +119,14 @@ export default function AppScreen() {
             onDeleteClient={handleDeleteClient}
           />
         );
+      case 'wherehouse_workers':
+        return (
+          <WherehouseWorkersPage
+            onBack={() => setCurrentRoute('settings')}
+            workersList={warehouseWorkersList}
+            onUpdateWorkersList={setWarehouseWorkersList}
+          />
+        );
       case 'settings':
       case 'more':
         return (
@@ -125,12 +140,17 @@ export default function AppScreen() {
             onClearAllData={() => {
               setColisList([]);
               setClientsList([]);
+              setWarehouseWorkersList([]);
             }}
             onRestoreDefaultData={() => {
               setColisList(INITIAL_COLIS);
               setClientsList(INITIAL_CLIENTS);
+              setWarehouseWorkersList(INITIAL_WAREHOUSE_WORKERS);
             }}
             onLogout={() => setFlowState('login')}
+            onNavigateToWarehouseWorkers={() => setCurrentRoute('wherehouse_workers')}
+            warehouseWorkersList={warehouseWorkersList}
+            onUpdateWarehouseWorkersList={setWarehouseWorkersList}
           />
         );
       default:
@@ -158,7 +178,7 @@ export default function AppScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="light-content" backgroundColor="#0B3E96" />
+      <StatusBar barStyle="light-content" />
       
       {/* Route Content View */}
       <View style={styles.content}>
@@ -167,7 +187,7 @@ export default function AppScreen() {
 
       {/* Bottom Navigation */}
       <Footer
-        activeTab={currentRoute}
+        activeTab={currentRoute === 'wherehouse_workers' ? 'settings' : currentRoute}
         onTabChange={(tab) => setCurrentRoute(tab)}
       />
     </SafeAreaView>

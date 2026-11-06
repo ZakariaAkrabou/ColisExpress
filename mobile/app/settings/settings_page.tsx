@@ -38,12 +38,17 @@ import {
   Phone,
   Database,
   RefreshCw,
+  HardHat,
 } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import { MoroccoFlagBadge, FranceFlagBadge } from '../../components/common/Icons';
 import { Colis } from '../colis/colis_page';
 import { Client } from '../client/clientPage';
 import { INITIAL_COLIS, INITIAL_CLIENTS } from '../../services/mockData';
+import WherehouseWorkersPage, {
+  WarehouseWorker,
+  INITIAL_WAREHOUSE_WORKERS,
+} from '../wherehouse_workers';
 
 export interface UserProfile {
   name: string;
@@ -65,6 +70,9 @@ export interface SettingsPageProps {
   onRestoreDefaultData?: () => void;
   onLogout?: () => void;
   user?: UserProfile;
+  onNavigateToWarehouseWorkers?: () => void;
+  warehouseWorkersList?: WarehouseWorker[];
+  onUpdateWarehouseWorkersList?: (workers: WarehouseWorker[]) => void;
 }
 
 // Google Drive Tri-Color Brand Logo SVG
@@ -165,14 +173,41 @@ export default function SettingsPage({
   onRestoreDefaultData,
   onLogout,
   user: initialUser,
+  onNavigateToWarehouseWorkers,
+  warehouseWorkersList,
+  onUpdateWarehouseWorkersList,
 }: SettingsPageProps) {
   // Local fallback states if not provided by parent
   const [localColis, setLocalColis] = useState<Colis[]>(colisList || INITIAL_COLIS);
   const [localClients, setLocalClients] = useState<Client[]>(clientsList || INITIAL_CLIENTS);
+  const [localWorkers, setLocalWorkers] = useState<WarehouseWorker[]>(
+    warehouseWorkersList || INITIAL_WAREHOUSE_WORKERS
+  );
 
   // Sync with prop updates if available
   const activeColisList = colisList !== undefined ? colisList : localColis;
   const activeClientsList = clientsList !== undefined ? clientsList : localClients;
+  const activeWorkersList =
+    warehouseWorkersList !== undefined ? warehouseWorkersList : localWorkers;
+
+  const handleUpdateWorkers = (newWorkers: WarehouseWorker[]) => {
+    if (onUpdateWarehouseWorkersList) {
+      onUpdateWarehouseWorkersList(newWorkers);
+    } else {
+      setLocalWorkers(newWorkers);
+    }
+  };
+
+  // Internal screen view state if navigation prop is not used
+  const [showInternalWorkersPage, setShowInternalWorkersPage] = useState(false);
+
+  const handleGoToWarehouseWorkers = () => {
+    if (onNavigateToWarehouseWorkers) {
+      onNavigateToWarehouseWorkers();
+    } else {
+      setShowInternalWorkersPage(true);
+    }
+  };
 
   // Logged User Profile State
   const [userProfile, setUserProfile] = useState<UserProfile>(
@@ -419,8 +454,10 @@ export default function SettingsPage({
       '⚠️ Vider toutes les données',
       'Êtes-vous absolument sûr de vouloir supprimer TOUTES les données ?\n\nCette action supprimera définitivement l’intégralité des colis (' +
         activeColisList.length +
-        ') et des clients (' +
+        '), des clients (' +
         activeClientsList.length +
+        ') et des ouvriers d’entrepôt (' +
+        activeWorkersList.length +
         ') de la base de données locale. Cette action est irréversible.',
       [
         { text: 'Annuler', style: 'cancel' },
@@ -434,8 +471,12 @@ export default function SettingsPage({
             if (onUpdateColisList) {
               onUpdateColisList([]);
             }
+            if (onUpdateWarehouseWorkersList) {
+              onUpdateWarehouseWorkersList([]);
+            }
             setLocalColis([]);
             setLocalClients([]);
+            setLocalWorkers([]);
             Alert.alert(
               'Données vidées',
               'Toutes les données ont été effacées. L’application est désormais vierge.'
@@ -450,7 +491,7 @@ export default function SettingsPage({
   const handleRestoreDefaultData = () => {
     Alert.alert(
       'Restaurer les données de test',
-      'Souhaitez-vous recharger la liste standard des colis et clients de démonstration ?',
+      'Souhaitez-vous recharger la liste standard des colis, clients et ouvriers d’entrepôt de démonstration ?',
       [
         { text: 'Annuler', style: 'cancel' },
         {
@@ -462,8 +503,12 @@ export default function SettingsPage({
             if (onUpdateColisList) {
               onUpdateColisList(INITIAL_COLIS);
             }
+            if (onUpdateWarehouseWorkersList) {
+              onUpdateWarehouseWorkersList(INITIAL_WAREHOUSE_WORKERS);
+            }
             setLocalColis(INITIAL_COLIS);
             setLocalClients(INITIAL_CLIENTS);
+            setLocalWorkers(INITIAL_WAREHOUSE_WORKERS);
             Alert.alert(
               'Données restaurées',
               'Les données de démonstration ont été restaurées avec succès.'
@@ -504,9 +549,19 @@ export default function SettingsPage({
 
   const passStrength = getPasswordStrength(newPassword);
 
+  if (showInternalWorkersPage) {
+    return (
+      <WherehouseWorkersPage
+        onBack={() => setShowInternalWorkersPage(false)}
+        workersList={activeWorkersList}
+        onUpdateWorkersList={handleUpdateWorkers}
+      />
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1d4ed8" />
+      <StatusBar barStyle="light-content" />
 
       {/* --- Top Header (Home Theme Style) --- */}
       <View style={styles.headerWrapper}>
@@ -637,7 +692,41 @@ export default function SettingsPage({
         </View>
 
         {/* ============================================================== */}
-        {/* 3. GOOGLE DRIVE CLOUD BACKUP                                   */}
+        {/* 3. WAREHOUSE WORKERS SECTION                                   */}
+        {/* ============================================================== */}
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>Gestion des Ouvriers d'Entrepôt</Text>
+            <View style={styles.workerCountBadge}>
+              <HardHat size={12} color="#2563eb" style={{ marginRight: 4 }} />
+              <Text style={styles.workerCountText}>
+                {activeWorkersList.length} Magasiniers
+              </Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.clickableRow}
+            onPress={handleGoToWarehouseWorkers}
+            activeOpacity={0.7}
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconCircle, { backgroundColor: '#eff6ff' }]}>
+                <HardHat size={18} color="#2563eb" strokeWidth={2.2} />
+              </View>
+              <View style={styles.settingTextGroup}>
+                <Text style={styles.settingLabel}>Ouvriers d'Entrepôt</Text>
+                <Text style={styles.settingDescription}>
+                  Gérer les magasiniers, mots de passe & contact WhatsApp direct
+                </Text>
+              </View>
+            </View>
+            <ChevronRight size={18} color="#94a3b8" />
+          </TouchableOpacity>
+        </View>
+
+        {/* ============================================================== */}
+        {/* 4. GOOGLE DRIVE CLOUD BACKUP                                   */}
         {/* ============================================================== */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeaderRow}>
@@ -1981,5 +2070,20 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '700',
+  },
+  workerCountBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#eff6ff',
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+  },
+  workerCountText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#2563eb',
   },
 });
