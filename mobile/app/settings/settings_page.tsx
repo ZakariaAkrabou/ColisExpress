@@ -151,15 +151,15 @@ export default function SettingsPage({
   onLogout,
   user: initialUser,
 }: SettingsPageProps) {
-  // Local fallback states if not provided by parent
+
   const [localColis, setLocalColis] = useState<Colis[]>(colisList || INITIAL_COLIS);
   const [localClients, setLocalClients] = useState<Client[]>(clientsList || INITIAL_CLIENTS);
 
-  // Sync with prop updates if available
+  
   const activeColisList = colisList !== undefined ? colisList : localColis;
   const activeClientsList = clientsList !== undefined ? clientsList : localClients;
 
-  // Logged User Profile State
+
   const [userProfile, setUserProfile] = useState<UserProfile>(
     initialUser || {
       name: 'Zakaria Akrabou',
