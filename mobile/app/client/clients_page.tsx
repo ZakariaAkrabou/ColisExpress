@@ -11,15 +11,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colis } from '../colis/colis_page';
+import { MoroccoFlagBadge, FranceFlagBadge } from '../../components/common/Icons';
 
 export interface Client {
   id: string;
   name: string;
   phone: string;
-  email: string;
-  country?: string;
   city: string;
-  address: string;
   totalShipments: number;
 }
 
@@ -36,24 +34,22 @@ export default function ClientsPage({ clientsList, colisList, onAddClient }: Cli
 
   // Form States
   const [name, setName] = useState('');
+  const [phoneCountry, setPhoneCountry] = useState<'+212' | '+33'>('+212');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
   const [city, setCity] = useState('');
-  const [address, setAddress] = useState('');
 
   const handleAddSubmit = () => {
-    if (!name || !phone || !city) {
+    if (!name.trim() || !phone.trim() || !city.trim()) {
       Alert.alert('Error', 'Please fill in Name, Phone, and City');
       return;
     }
 
+    const fullPhone = `${phoneCountry} ${phone.trim()}`;
     const newClient: Client = {
       id: `CL-${Math.floor(100 + Math.random() * 900)}`,
-      name,
-      phone,
-      email: email || `${name.toLowerCase().replace(/\s+/g, '')}@gmail.com`,
-      city,
-      address: address || 'No specific address provided',
+      name: name.trim(),
+      phone: fullPhone,
+      city: city.trim(),
       totalShipments: 0,
     };
 
@@ -62,10 +58,9 @@ export default function ClientsPage({ clientsList, colisList, onAddClient }: Cli
 
     // Reset Form
     setName('');
+    setPhoneCountry('+212');
     setPhone('');
-    setEmail('');
     setCity('');
-    setAddress('');
   };
 
   const filteredClients = clientsList.filter((client) => {
@@ -191,13 +186,6 @@ export default function ClientsPage({ clientsList, colisList, onAddClient }: Cli
                     <Text style={styles.actionIcon}>💬</Text>
                     <Text style={styles.actionText}>SMS</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.actionButton, { backgroundColor: '#6366f1' }]}
-                    onPress={() => Alert.alert('Email Contact', `Sending email to ${selectedClient.email}...`)}
-                  >
-                    <Text style={styles.actionIcon}>✉️</Text>
-                    <Text style={styles.actionText}>Email</Text>
-                  </TouchableOpacity>
                 </View>
 
                 {/* Contact Information */}
@@ -208,16 +196,8 @@ export default function ClientsPage({ clientsList, colisList, onAddClient }: Cli
                     <Text style={styles.infoValue}>{selectedClient.phone}</Text>
                   </View>
                   <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Email</Text>
-                    <Text style={styles.infoValue}>{selectedClient.email}</Text>
-                  </View>
-                  <View style={styles.infoRow}>
                     <Text style={styles.infoLabel}>City</Text>
                     <Text style={styles.infoValue}>{selectedClient.city}</Text>
-                  </View>
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Full Address</Text>
-                    <Text style={styles.infoValue}>{selectedClient.address}</Text>
                   </View>
                 </View>
 
@@ -278,6 +258,47 @@ export default function ClientsPage({ clientsList, colisList, onAddClient }: Cli
                 value={name}
                 onChangeText={setName}
               />
+
+              <View style={styles.countrySelectorRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.countryTab,
+                    phoneCountry === '+212' ? styles.countryTabActive : null,
+                  ]}
+                  onPress={() => setPhoneCountry('+212')}
+                  activeOpacity={0.8}
+                >
+                  <MoroccoFlagBadge size={18} />
+                  <Text
+                    style={[
+                      styles.countryCodeText,
+                      phoneCountry === '+212' ? styles.countryCodeTextActive : null,
+                    ]}
+                  >
+                    +212 (Maroc)
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.countryTab,
+                    phoneCountry === '+33' ? styles.countryTabActive : null,
+                  ]}
+                  onPress={() => setPhoneCountry('+33')}
+                  activeOpacity={0.8}
+                >
+                  <FranceFlagBadge size={18} />
+                  <Text
+                    style={[
+                      styles.countryCodeText,
+                      phoneCountry === '+33' ? styles.countryCodeTextActive : null,
+                    ]}
+                  >
+                    +33 (France)
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
               <TextInput
                 style={styles.formInput}
                 placeholder="Phone Number *"
@@ -286,31 +307,14 @@ export default function ClientsPage({ clientsList, colisList, onAddClient }: Cli
                 value={phone}
                 onChangeText={setPhone}
               />
-              <TextInput
-                style={styles.formInput}
-                placeholder="Email Address"
-                placeholderTextColor="#94a3b8"
-                keyboardType="email-address"
-                value={email}
-                onChangeText={setEmail}
-              />
 
-              <Text style={styles.formSectionTitle}>Address Details</Text>
+              <Text style={styles.formSectionTitle}>City</Text>
               <TextInput
                 style={styles.formInput}
                 placeholder="City *"
                 placeholderTextColor="#94a3b8"
                 value={city}
                 onChangeText={setCity}
-              />
-              <TextInput
-                style={[styles.formInput, styles.textArea]}
-                placeholder="Full Street Address"
-                placeholderTextColor="#94a3b8"
-                multiline={true}
-                numberOfLines={3}
-                value={address}
-                onChangeText={setAddress}
               />
 
               <TouchableOpacity style={styles.formSubmitButton} onPress={handleAddSubmit}>
@@ -670,6 +674,38 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#334155',
     marginBottom: 10,
+  },
+  countrySelectorRow: {
+    flexDirection: 'row',
+    backgroundColor: '#0f172a',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#334155',
+    padding: 3,
+    marginBottom: 10,
+    gap: 6,
+  },
+  countryTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: 6,
+    gap: 6,
+  },
+  countryTabActive: {
+    backgroundColor: '#1e293b',
+    borderWidth: 1,
+    borderColor: '#3b82f6',
+  },
+  countryCodeText: {
+    color: '#94a3b8',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  countryCodeTextActive: {
+    color: '#38bdf8',
   },
   textArea: {
     height: 70,
