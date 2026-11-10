@@ -3,7 +3,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
-import routes from './routes/auth.route';
+import authRoutes from './routes/auth.route';
+import clientRoutes from './routes/client.route';
 
 
 const createApp = (): Application => {
@@ -26,7 +27,9 @@ const createApp = (): Application => {
 //   app.use(limiter);
 
 
-  app.use('/api/auth', routes);
+  app.use('/api/auth', authRoutes);
+  app.use('/api/clients', clientRoutes);
+  app.use('/clients', clientRoutes);
 
 
 
