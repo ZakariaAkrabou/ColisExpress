@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 
 import routes from './routes/auth.route';
+import locationRoutes from './routes/location.route';
 
 
 const createApp = (): Application => {
@@ -27,7 +28,7 @@ const createApp = (): Application => {
 
 
   app.use('/api/auth', routes);
-
+  app.use('/api/locations', locationRoutes);
 
 
 

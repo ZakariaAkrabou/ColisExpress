@@ -1,21 +1,23 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { verifyToken } from '../utils/jwt';
 import { User, IUser, UserRole } from '../models/user.model';
-
 
 export interface AuthRequest extends Request {
     user?: IUser;
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_sercet_fallback_key';
+
 
 export const protect = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-
     try {
         let token;
 
-        if (req.headers.authorization && req.headers.authorization?.startsWith('Bearer')) {
-            token = req.headers.authorization.split(' ')[1];
+        const authHeader = req.headers.authorization;
+        if (authHeader && /^Bearer\s/i.test(authHeader)) {
+            token = authHeader
+                .replace(/^(Bearer\s+)+/i, '')
+                .trim()
+                .replace(/^["']|["']$/g, '');
         }
 
         if (!token) {
@@ -23,7 +25,8 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
             return;
         }
 
-        const decoded = jwt.verify(token, JWT_SECRET) as { id: string; role: string };
+       
+        const decoded = verifyToken(token);
 
         const currentUser = await User.findById(decoded.id);
         if (!currentUser) {
@@ -38,18 +41,18 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
 
         req.user = currentUser;
         next();
-    } catch (error) {
+    } catch (error: any) {
+        
+        console.error(" JWT VERIFY ERROR:", error.message,
+            "| Authorization header received:", JSON.stringify((req.headers.authorization || '').slice(0, 40)));
         res.status(401).json({ message: 'Not authorized. Invalid or expired token.' });
     }
 };
 
-
 export const restrictTo = (...roles: UserRole[]) => {
-
     return (req: AuthRequest, res: Response, next: NextFunction): void => {
-        if(!req.user || !roles.includes(req.user.role)) {
+        if (!req.user || !roles.includes(req.user.role)) {
             res.status(403).json({ message: 'You do not have permission to perform this action.' });
-            
             return;
         }
         next();

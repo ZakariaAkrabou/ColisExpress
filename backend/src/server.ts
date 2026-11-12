@@ -1,8 +1,7 @@
+import 'dotenv/config'; // must be first: loads .env before any module reads process.env
 import http from 'http';
 import createApp from './app';
 import {connectDB} from './config/database';
-import { config } from 'dotenv';
-config({ quiet: true }); 
 
 const PORT = process.env.PORT || '5000';
 const MONGO_URL = process.env.DATABASE_URL || '';
