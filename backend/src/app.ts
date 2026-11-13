@@ -5,6 +5,7 @@ import morgan from 'morgan';
 
 import authRoutes from './routes/auth.route';
 import clientRoutes from './routes/client.route';
+import colisRoutes from './routes/colis.route';
 
 
 const createApp = (): Application => {
@@ -30,6 +31,8 @@ const createApp = (): Application => {
   app.use('/api/auth', authRoutes);
   app.use('/api/clients', clientRoutes);
   app.use('/clients', clientRoutes);
+  app.use('/api/colis', colisRoutes);
+  app.use('/colis', colisRoutes);
 
 
 
