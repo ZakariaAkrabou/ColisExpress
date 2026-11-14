@@ -5,7 +5,7 @@ import { ColisService } from '../services/colis.service';
 export class ColisController {
   /**
    * POST /colis
-   * Create a new colis (or batch if createBatch=true or if requested)
+   * Create a new colis (Always creates ONE document, one command = one document)
    */
   static async createColis(req: Request, res: Response): Promise<void> {
     try {
@@ -19,8 +19,6 @@ export class ColisController {
         weight,
         price,
         quantity,
-        orderInCommand,
-        ncommand,
         isPaid,
         isADomicile,
         status,
@@ -28,43 +26,11 @@ export class ColisController {
         description,
         image,
         direction,
-        createBatch,
       } = req.body;
 
       if (!senderName || !senderPhone || !receiverName || !receiverPhone || !fromCity || !toCity || weight === undefined || price === undefined) {
         res.status(400).json({
           message: 'Sender name, sender phone, receiver name, receiver phone, departure city, destination city, weight, and price are required',
-        });
-        return;
-      }
-
-      // If createBatch is true and quantity > 1, create individual colis records
-      if (createBatch && Number(quantity) > 1) {
-        const colisList = await ColisService.createColisBatch({
-          senderName,
-          senderPhone,
-          receiverName,
-          receiverPhone,
-          fromCity,
-          toCity,
-          weight,
-          price,
-          quantity,
-          orderInCommand,
-          ncommand,
-          isPaid,
-          isADomicile,
-          status,
-          date,
-          description,
-          image,
-          direction,
-        });
-
-        res.status(201).json({
-          message: `${colisList.length} colis created successfully`,
-          count: colisList.length,
-          colis: colisList,
         });
         return;
       }
@@ -79,8 +45,6 @@ export class ColisController {
         weight,
         price,
         quantity,
-        orderInCommand,
-        ncommand,
         isPaid,
         isADomicile,
         status,
@@ -249,11 +213,66 @@ export class ColisController {
     }
   }
 
+  /**
+   * DELETE /colis/bulk
+   * Delete multiple colis by IDs
+   */
+  static async deleteColisBulk(req: Request, res: Response): Promise<void> {
+    try {
+      const { ids } = req.body;
+
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        res.status(400).json({
+          message: 'ids must be a non-empty array of MongoDB ObjectIds',
+        });
+        return;
+      }
+
+      const deletedCount = await ColisService.deleteColisBulk(ids);
+
+      res.status(200).json({
+        message: `${deletedCount} colis deleted successfully`,
+        deletedCount,
+      });
+    } catch (error: any) {
+      if (
+        error.message?.includes('Invalid colis ID') ||
+        error.message?.includes('ids must be') ||
+        error.name === 'CastError'
+      ) {
+        res.status(400).json({ message: error.message });
+        return;
+      }
+
+      console.error('Bulk Delete Colis Error:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+
+  /**
+   * DELETE /colis/all
+   * Delete all colis
+   */
+  static async deleteAllColis(_req: Request, res: Response): Promise<void> {
+    try {
+      const deletedCount = await ColisService.deleteAllColis();
+
+      res.status(200).json({
+        message: `All colis deleted successfully (${deletedCount} documents removed)`,
+        deletedCount,
+      });
+    } catch (error: any) {
+      console.error('Delete All Colis Error:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+
   // Method aliases
   static create = ColisController.createColis;
   static getAll = ColisController.getAllColis;
   static getById = ColisController.getColisById;
   static update = ColisController.updateColis;
   static delete = ColisController.deleteColis;
+  static deleteBulk = ColisController.deleteColisBulk;
+  static deleteAll = ColisController.deleteAllColis;
 }
-

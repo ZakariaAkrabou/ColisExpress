@@ -1,5 +1,6 @@
-import mongoose from 'mongoose';
+import mongoose, { ClientSession } from 'mongoose';
 import Colis, { IColis } from '../models/colis.model';
+import Counter from '../models/counter.model';
 
 export interface CreateColisDTO {
   senderName: string;
@@ -43,10 +44,12 @@ export interface UpdateColisDTO {
   direction?: 'FR_TO_MA' | 'MA_TO_FR';
 }
 
+const COUNTER_ID = 'colis_order';
+
 export class ColisService {
   /**
    * Helper to format ncommand
-   * Formats order of colis / total quantity of colis. Example: order 1 of 2 -> "1/2"
+   * Formats orderInCommand / total quantity of colis. Example: order 1 of 2 -> "1/2"
    */
   static formatNCommand(order: number, totalQuantity: number): string {
     const validTotal = Number(totalQuantity) > 0 ? Number(totalQuantity) : 1;
@@ -55,7 +58,133 @@ export class ColisService {
   }
 
   /**
-   * Create a new colis in MongoDB
+   * Concurrency-safe counter generation.
+   * Atomically increments and returns the next sequence number outside long-lived transaction locks
+   * using findOneAndUpdate with $inc. This eliminates WriteConflict during high-concurrency inserts.
+   */
+  private static async getNextOrderInCommand(): Promise<number> {
+    // Check if initialized
+    const existingCounter = await Counter.findById(COUNTER_ID);
+    if (!existingCounter) {
+      const highestDoc = await Colis.findOne({}, { orderInCommand: 1 })
+        .sort({ orderInCommand: -1 })
+        .lean();
+      const currentMax = highestDoc && typeof highestDoc.orderInCommand === 'number' ? highestDoc.orderInCommand : 0;
+
+      await Counter.findByIdAndUpdate(
+        COUNTER_ID,
+        { $setOnInsert: { seq: currentMax } },
+        { upsert: true, returnDocument: 'after' }
+      );
+    }
+
+    const updatedCounter = await Counter.findByIdAndUpdate(
+      COUNTER_ID,
+      { $inc: { seq: 1 } },
+      { returnDocument: 'after', upsert: true }
+    );
+
+    return updatedCounter ? updatedCounter.seq : 1;
+  }
+
+  /**
+   * Renumbers all remaining Colis documents sequentially starting from 1
+   * in order of their existing orderInCommand (or createdAt/id as fallback),
+   * recalculates each ncommand using its own quantity, and resets the counter to remaining count.
+   */
+  private static async renumberRemaining(session?: ClientSession): Promise<void> {
+    const opts = session ? { session } : {};
+
+    const remaining = await Colis.find({}, null, opts).sort({
+      orderInCommand: 1,
+      createdAt: 1,
+      _id: 1,
+    });
+
+    for (let i = 0; i < remaining.length; i++) {
+      const doc = remaining[i];
+      const newOrder = i + 1;
+      const newNCommand = ColisService.formatNCommand(newOrder, doc.quantity);
+
+      if (doc.orderInCommand !== newOrder || doc.ncommand !== newNCommand) {
+        await Colis.updateOne(
+          { _id: doc._id },
+          { $set: { orderInCommand: newOrder, ncommand: newNCommand } },
+          opts
+        );
+      }
+    }
+
+    // Synchronize the atomic counter to the remaining count
+    await Counter.findByIdAndUpdate(
+      COUNTER_ID,
+      { $set: { seq: remaining.length } },
+      { upsert: true, returnDocument: 'after', ...opts }
+    );
+  }
+
+  /**
+   * Helper to execute operations in a transaction with automatic retry on TransientTransactionError / WriteConflict.
+   */
+  private static async withTransaction<T>(
+    fn: (session: ClientSession | undefined) => Promise<T>,
+    maxRetries = 5
+  ): Promise<T> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      let session: ClientSession | undefined;
+      try {
+        session = await mongoose.startSession();
+        session.startTransaction();
+        const result = await fn(session);
+        await session.commitTransaction();
+        return result;
+      } catch (error: any) {
+        if (session && session.inTransaction()) {
+          try {
+            await session.abortTransaction();
+          } catch {
+            // Ignore abort error
+          }
+        }
+
+        const isTransient =
+          error?.errorLabelSet?.has('TransientTransactionError') ||
+          error?.code === 112 ||
+          error?.message?.includes('WriteConflict');
+
+        if (isTransient && attempt < maxRetries) {
+          // Exponential backoff with jitter
+          const delay = Math.floor(Math.random() * 50) + attempt * 20;
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+
+        // If transactions are not supported by deployment (e.g. standalone Mongo)
+        if (
+          error.message?.includes('Transactions are not supported') ||
+          error.message?.includes('replica set')
+        ) {
+          return await fn(undefined);
+        }
+
+        throw error;
+      } finally {
+        if (session) {
+          await session.endSession();
+        }
+      }
+    }
+
+    throw new Error('Transaction failed after maximum retries');
+  }
+
+  /**
+   * Create a new colis in MongoDB.
+   * IMPORTANT BUSINESS RULE: ONE COMMAND = ONE MONGODB DOCUMENT.
+   * Always creates exactly ONE document using Colis.create() once.
+   * `quantity` represents physical packages in the command and is stored as such.
+   * `orderInCommand` is generated on the backend atomically; frontend values are never trusted.
+   * `ncommand` is generated as `${orderInCommand}/${quantity}`.
    */
   static async createColis(data: CreateColisDTO): Promise<IColis> {
     const {
@@ -68,8 +197,6 @@ export class ColisService {
       weight,
       price,
       quantity = 1,
-      orderInCommand = 1,
-      ncommand,
       isPaid = true,
       isADomicile = true,
       status = 'pending',
@@ -114,13 +241,12 @@ export class ColisService {
     }
 
     const parsedQuantity = Math.max(1, parseInt(String(quantity), 10) || 1);
-    const parsedOrder = Math.max(1, parseInt(String(orderInCommand), 10) || 1);
 
-    // If ncommand not explicitly given, compute it as order/total quantity (e.g. 1/2)
-    const finalNCommand = ncommand && ncommand.trim()
-      ? ncommand.trim()
-      : ColisService.formatNCommand(parsedOrder, parsedQuantity);
+    // Atomically increment the sequence counter (thread-safe and concurrency-safe)
+    const generatedOrder = await ColisService.getNextOrderInCommand();
+    const generatedNCommand = ColisService.formatNCommand(generatedOrder, parsedQuantity);
 
+    // Exactly ONE document created using Colis.create() once
     const colis = await Colis.create({
       senderName: senderName.trim(),
       senderPhone: senderPhone.trim(),
@@ -131,8 +257,8 @@ export class ColisService {
       weight: parsedWeight,
       price: parsedPrice,
       quantity: parsedQuantity,
-      orderInCommand: parsedOrder,
-      ncommand: finalNCommand,
+      orderInCommand: generatedOrder,
+      ncommand: generatedNCommand,
       isPaid: Boolean(isPaid),
       isADomicile: Boolean(isADomicile),
       status: status || 'pending',
@@ -146,41 +272,10 @@ export class ColisService {
   }
 
   /**
-   * Create multiple colis entries for a multi-quantity batch
-   * E.g. for quantity = 2, creates colis 1/2 and 2/2
-   */
-  static async createColisBatch(data: CreateColisDTO): Promise<IColis[]> {
-    const totalQuantity = Math.max(1, parseInt(String(data.quantity), 10) || 1);
-    
-    if (totalQuantity === 1) {
-      const single = await ColisService.createColis({
-        ...data,
-        quantity: 1,
-        orderInCommand: 1,
-        ncommand: ColisService.formatNCommand(1, 1),
-      });
-      return [single];
-    }
-
-    const createdList: IColis[] = [];
-    for (let order = 1; order <= totalQuantity; order++) {
-      const colis = await ColisService.createColis({
-        ...data,
-        quantity: totalQuantity,
-        orderInCommand: order,
-        ncommand: ColisService.formatNCommand(order, totalQuantity),
-      });
-      createdList.push(colis);
-    }
-
-    return createdList;
-  }
-
-  /**
    * Return all colis
    */
   static async getAllColis(filter: Record<string, any> = {}): Promise<IColis[]> {
-    return await Colis.find(filter).sort({ createdAt: -1 });
+    return await Colis.find(filter).sort({ orderInCommand: 1, createdAt: -1 });
   }
 
   /**
@@ -202,6 +297,9 @@ export class ColisService {
 
   /**
    * Update colis by ID
+   * Updating quantity must not change orderInCommand.
+   * Recalculate ncommand using the existing order and the new quantity.
+   * Frontend is NOT allowed to modify orderInCommand or ncommand directly.
    */
   static async updateColis(id: string, data: UpdateColisDTO): Promise<IColis> {
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
@@ -273,18 +371,13 @@ export class ColisService {
       updateData.price = parsedPrice;
     }
 
-    if (data.quantity !== undefined || data.orderInCommand !== undefined) {
-      const q = data.quantity !== undefined ? Math.max(1, Number(data.quantity)) : existingColis.quantity;
-      const o = data.orderInCommand !== undefined ? Math.max(1, Number(data.orderInCommand)) : existingColis.orderInCommand;
-      updateData.quantity = q;
-      updateData.orderInCommand = o;
-      updateData.ncommand = ColisService.formatNCommand(o, q);
-    } else if (data.ncommand !== undefined) {
-      if (!data.ncommand.trim()) {
-        throw new Error('ncommand cannot be empty');
-      }
-      updateData.ncommand = data.ncommand.trim();
+    // If quantity is updated, preserve existing orderInCommand and recalculate ncommand
+    if (data.quantity !== undefined) {
+      const newQuantity = Math.max(1, parseInt(String(data.quantity), 10) || 1);
+      updateData.quantity = newQuantity;
+      updateData.ncommand = ColisService.formatNCommand(existingColis.orderInCommand, newQuantity);
     }
+    // Note: orderInCommand and ncommand sent from client are ignored to prevent tampering
 
     if (data.isPaid !== undefined) {
       updateData.isPaid = Boolean(data.isPaid);
@@ -324,7 +417,7 @@ export class ColisService {
     const updatedColis = await Colis.findByIdAndUpdate(
       id,
       { $set: updateData },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
 
     if (!updatedColis) {
@@ -336,27 +429,84 @@ export class ColisService {
 
   /**
    * Delete a colis by ID
+   * After deleting:
+   * - Retrieve remaining documents in their current command order.
+   * - Renumber sequentially starting from 1.
+   * - Recalculate each ncommand using its own quantity.
    */
   static async deleteColis(id: string): Promise<IColis> {
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       throw new Error('Invalid colis ID');
     }
 
-    const deletedColis = await Colis.findByIdAndDelete(id);
+    return await ColisService.withTransaction(async (session) => {
+      const opts = session ? { session } : {};
+      const deletedColis = await Colis.findByIdAndDelete(id, opts);
 
-    if (!deletedColis) {
-      throw new Error('Colis not found');
+      if (!deletedColis) {
+        throw new Error('Colis not found');
+      }
+
+      await ColisService.renumberRemaining(session);
+
+      return deletedColis;
+    });
+  }
+
+  /**
+   * Delete multiple Colis by array of MongoDB IDs
+   * After deleting:
+   * - Renumber all remaining command documents sequentially starting from 1.
+   * - Recalculate each ncommand using its own quantity.
+   */
+  static async deleteColisBulk(ids: string[]): Promise<number> {
+    if (!Array.isArray(ids) || ids.length === 0) {
+      throw new Error('ids must be a non-empty array of MongoDB ObjectIds');
     }
 
-    return deletedColis;
+    for (const id of ids) {
+      if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+        throw new Error(`Invalid colis ID: ${id}`);
+      }
+    }
+
+    return await ColisService.withTransaction(async (session) => {
+      const opts = session ? { session } : {};
+      const result = await Colis.deleteMany({ _id: { $in: ids } }, opts);
+      const deletedCount = result.deletedCount || 0;
+
+      await ColisService.renumberRemaining(session);
+
+      return deletedCount;
+    });
+  }
+
+  /**
+   * Delete all Colis from the collection
+   * Resets the command counter so the next created command starts at 1.
+   */
+  static async deleteAllColis(): Promise<number> {
+    return await ColisService.withTransaction(async (session) => {
+      const opts = session ? { session } : {};
+      const result = await Colis.deleteMany({}, opts);
+      const deletedCount = result.deletedCount || 0;
+
+      await Counter.findByIdAndUpdate(
+        COUNTER_ID,
+        { $set: { seq: 0 } },
+        { upsert: true, returnDocument: 'after', ...opts }
+      );
+
+      return deletedCount;
+    });
   }
 
   // Method aliases
   static create = ColisService.createColis;
-  static createBatch = ColisService.createColisBatch;
   static getAll = ColisService.getAllColis;
   static getById = ColisService.getColisById;
   static update = ColisService.updateColis;
   static delete = ColisService.deleteColis;
+  static deleteBulk = ColisService.deleteColisBulk;
+  static deleteAll = ColisService.deleteAllColis;
 }
-
