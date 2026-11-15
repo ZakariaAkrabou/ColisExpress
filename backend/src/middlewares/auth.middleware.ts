@@ -1,32 +1,24 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyToken } from '../utils/jwt';
+import { verifyToken, JWT_SECRET } from '../utils/jwt';
 import { User, IUser, UserRole } from '../models/user.model';
-
+import jwt from 'jsonwebtoken';
 export interface AuthRequest extends Request {
     user?: IUser;
 }
 
 
-
 export const protect = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
         let token;
-
-        const authHeader = req.headers.authorization;
-        if (authHeader && /^Bearer\s/i.test(authHeader)) {
-            token = authHeader
-                .replace(/^(Bearer\s+)+/i, '')
-                .trim()
-                .replace(/^["']|["']$/g, '');
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+            token = req.headers.authorization.split(' ')[1];
         }
 
         if (!token) {
-            res.status(401).json({ message: 'Not authorized to access this route. No token provided.' });
+            res.status(401).json({ message: 'Not authorized. No token provided.' });
             return;
         }
-
-       
-        const decoded = verifyToken(token);
+        const decoded = jwt.verify(token, JWT_SECRET as jwt.Secret) as { id: string; role: string; tokenVersion: number };
 
         const currentUser = await User.findById(decoded.id);
         if (!currentUser) {
@@ -38,13 +30,15 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
             res.status(403).json({ message: 'This account has been disabled.' });
             return;
         }
+        if (decoded.tokenVersion !== currentUser.tokenVersion) {
+            res.status(401).json({ message: 'Session expired. Please log in again.' });
+            return;
+        }
 
         req.user = currentUser;
         next();
     } catch (error: any) {
-        
-        console.error(" JWT VERIFY ERROR:", error.message,
-            "| Authorization header received:", JSON.stringify((req.headers.authorization || '').slice(0, 40)));
+        console.error("JWT VERIFY ERROR:", error.message); 
         res.status(401).json({ message: 'Not authorized. Invalid or expired token.' });
     }
 };

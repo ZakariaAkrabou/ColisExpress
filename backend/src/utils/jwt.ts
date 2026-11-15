@@ -1,17 +1,17 @@
 import jwt from 'jsonwebtoken';
 
 const JWT_EXPIRES_IN = '1d';
+export const JWT_SECRET: string = process.env.JWT_SECRET || 'your_sercet_fallback_key';
 
-// Read the secret at call time (not at import time) so it always reflects the loaded .env,
-// and so signing and verifying are guaranteed to use the same key.
+
 const getSecret = (): jwt.Secret => {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error('JWT_SECRET is not defined in environment');
   return secret;
 };
 
-export const generateToken = (userId: string, role: string): string => {
-  return jwt.sign({ id: userId, role }, getSecret(), { expiresIn: JWT_EXPIRES_IN });
+export const generateToken = (userId: string, role: string, tokenVersion: number): string => {
+  return jwt.sign({ id: userId, role, tokenVersion }, JWT_SECRET as jwt.Secret, { expiresIn: '1d' });
 };
 
 export const verifyToken = (token: string): { id: string; role: string } => {

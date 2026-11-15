@@ -5,6 +5,7 @@ import morgan from 'morgan';
 
 import routes from './routes/auth.route';
 import locationRoutes from './routes/location.route';
+import adminRoutes from './routes/admin.route';
 
 
 const createApp = (): Application => {
@@ -29,6 +30,7 @@ const createApp = (): Application => {
 
   app.use('/api/auth', routes);
   app.use('/api/locations', locationRoutes);
+  app.use('/api/admin', adminRoutes);
 
 
 
