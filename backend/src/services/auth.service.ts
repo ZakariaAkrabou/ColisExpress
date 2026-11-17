@@ -19,7 +19,8 @@ export class AuthService {
             throw new Error('Account is disabled');
         }
 
-      const token = generateToken(user.id, user.role, user.tokenVersion);
+     const token = generateToken(user.id.toString(), user.role, user.tokenVersion);
+
 
 
 
