@@ -21,6 +21,8 @@ export interface Colis {
   fromCity: string;
   toCity: string;
   quantity?: number;
+  orderInCommand?: number;
+  ncommand?: string;
   weight: number; // in kg
   price: number; // in MAD
   isPaid?: boolean; // Payment status (true = Yes/Payed, false = No/Unpaid)
@@ -121,6 +123,9 @@ export default function CreateColis({
       return;
     }
 
+    const parsedQty = parseInt(quantity, 10) || 1;
+    const initialOrder = 1;
+
     const newColis: Colis = {
       id: `CX-${Math.floor(1000 + Math.random() * 9000)}`,
       senderName: senderName.trim(),
@@ -129,7 +134,9 @@ export default function CreateColis({
       receiverPhone: receiverPhone.trim() || (direction === 'FR_TO_MA' ? '+212 6 61 23 45 67' : '+33 6 12 34 56 78'),
       fromCity: fromCity.trim(),
       toCity: toCity.trim(),
-      quantity: parseInt(quantity, 10) || 1,
+      quantity: parsedQty,
+      orderInCommand: initialOrder,
+      ncommand: `${initialOrder}/${parsedQty}`,
       weight: parseFloat(weight) || 1,
       price: parseFloat(price) || 10,
       isPaid: isPaid,

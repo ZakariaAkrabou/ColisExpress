@@ -1,9 +1,11 @@
-import express, { Application, Request, Response, NextFunction } from 'express';
+import express, { Application} from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
-import routes from './routes/auth.route';
+import authRoutes from './routes/auth.route';
+import clientRoutes from './routes/client.route';
+import colisRoutes from './routes/colis.route';
 import locationRoutes from './routes/location.route';
 import adminRoutes from './routes/admin.route';
 import backupRoutes from './routes/backup.route';
@@ -29,7 +31,9 @@ const createApp = (): Application => {
 //   app.use(limiter);
 
 
-  app.use('/api/auth', routes);
+  app.use('/api/auth', authRoutes);
+  app.use('/api/clients', clientRoutes);
+  app.use('/api/colis', colisRoutes);
   app.use('/api/locations', locationRoutes);
   app.use('/api/admin', adminRoutes);
   app.use('/api/backup', backupRoutes);

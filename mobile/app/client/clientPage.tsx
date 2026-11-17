@@ -16,6 +16,7 @@ import {
   ScanLine,
   X,
   Users,
+  MapPin,
 } from 'lucide-react-native';
 import { Colis } from '../colis/colis_page';
 import ClientDetailModal from './clientDetail';
@@ -25,11 +26,7 @@ export interface Client {
   id: string;
   name: string;
   phone: string;
-  email?: string;
-  city?: string;
-  address?: string;
-  addressMorocco?: string;
-  addressFrance?: string;
+  city: string;
   totalShipments: number;
   createdAt?: string;
 }
@@ -63,7 +60,6 @@ export default function ClientsPage({
     return (
       client.name.toLowerCase().includes(term) ||
       client.phone.includes(term) ||
-      (client.email && client.email.toLowerCase().includes(term)) ||
       (client.city && client.city.toLowerCase().includes(term))
     );
   });
@@ -186,11 +182,12 @@ export default function ClientsPage({
                 <Text style={styles.clientName} className="text-slate-900 font-bold text-[15px]" numberOfLines={1}>
                   {client.name}
                 </Text>
-                {client.email ? (
-                  <Text style={styles.clientEmail} className="text-slate-400 text-xs mt-0.5" numberOfLines={1}>
-                    {client.email}
+                <View style={styles.clientCityRow}>
+                  <MapPin size={12} color="#64748b" strokeWidth={2.2} />
+                  <Text style={styles.clientCity} numberOfLines={1}>
+                    {client.city}
                   </Text>
-                ) : null}
+                </View>
                 <Text style={styles.clientPhone} className="text-slate-600 text-xs font-medium mt-1" numberOfLines={1}>
                   {client.phone}
                 </Text>
@@ -326,10 +323,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: -0.1,
   },
-  clientEmail: {
-    color: '#94a3b8',
-    fontSize: 12,
+  clientCityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 2,
+    gap: 4,
+  },
+  clientCity: {
+    color: '#64748b',
+    fontSize: 12,
+    fontWeight: '500',
   },
   clientPhone: {
     color: '#475569',

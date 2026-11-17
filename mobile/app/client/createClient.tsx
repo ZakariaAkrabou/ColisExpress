@@ -14,11 +14,8 @@ import {
 import {
   User,
   Phone,
-  Mail,
   MapPin,
   ArrowLeft,
-  Check,
-  Building2,
   ShieldCheck,
   UserPlus,
 } from 'lucide-react-native';
@@ -39,10 +36,7 @@ export default function CreateClientScreen({
   const [name, setName] = useState('');
   const [countryCode, setCountryCode] = useState<'+212' | '+33'>('+212');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [email, setEmail] = useState('');
   const [city, setCity] = useState('');
-  const [addressMorocco, setAddressMorocco] = useState('');
-  const [addressFrance, setAddressFrance] = useState('');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const validate = () => {
@@ -64,8 +58,8 @@ export default function CreateClientScreen({
       }
     }
 
-    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      newErrors.email = 'Format d’email invalide';
+    if (!city.trim()) {
+      newErrors.city = 'La ville est obligatoire';
     }
 
     setErrors(newErrors);
@@ -86,11 +80,7 @@ export default function CreateClientScreen({
       id: formattedId,
       name: name.trim(),
       phone: fullPhone,
-      email: email.trim() || undefined,
-      city: city.trim() || (countryCode === '+212' ? 'Casablanca' : 'Paris'),
-      address: addressMorocco.trim() || addressFrance.trim() || city.trim(),
-      addressMorocco: addressMorocco.trim() || undefined,
-      addressFrance: addressFrance.trim() || undefined,
+      city: city.trim(),
       totalShipments: 0,
       createdAt: new Date().toLocaleDateString('fr-FR'),
     };
@@ -122,7 +112,7 @@ export default function CreateClientScreen({
 
           <View style={styles.headerTitleGroup}>
             <Text style={styles.headerTitle}>Nouveau Client</Text>
-            <Text style={styles.headerSubtitle}>Ajouter un expéditeur ou destinataire</Text>
+            <Text style={styles.headerSubtitle}>Nom, ville et numéro de téléphone</Text>
           </View>
 
           <View style={styles.headerRightPlaceholder} />
@@ -135,8 +125,9 @@ export default function CreateClientScreen({
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.formSection}>
-          <Text style={styles.sectionTitle}>Informations Personnelles</Text>
+          <Text style={styles.sectionTitle}>Informations du Client</Text>
 
+          {/* Full Name */}
           <View style={styles.fieldGroup}>
             <View style={styles.labelRow}>
               <Text style={styles.fieldLabel}>Nom complet</Text>
@@ -158,6 +149,7 @@ export default function CreateClientScreen({
             {errors.name ? <Text style={styles.errorText}>{errors.name}</Text> : null}
           </View>
 
+          {/* Phone Number with Country Selection (France or Morocco) */}
           <View style={styles.fieldGroup}>
             <View style={styles.labelRow}>
               <Text style={styles.fieldLabel}>Numéro de téléphone</Text>
@@ -181,7 +173,7 @@ export default function CreateClientScreen({
                       countryCode === '+212' ? styles.countryCodeTextActive : null,
                     ]}
                   >
-                    +212
+                    +212 (Maroc)
                   </Text>
                 </TouchableOpacity>
 
@@ -200,7 +192,7 @@ export default function CreateClientScreen({
                       countryCode === '+33' ? styles.countryCodeTextActive : null,
                     ]}
                   >
-                    +33
+                    +33 (France)
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -214,7 +206,7 @@ export default function CreateClientScreen({
                 <Phone size={18} color={errors.phone ? '#ef4444' : '#2563eb'} strokeWidth={2.2} />
                 <TextInput
                   style={styles.textInput}
-                  placeholder="6 12 34 56 78"
+                  placeholder={countryCode === '+212' ? '6 12 34 56 78' : '6 12 34 56 78'}
                   placeholderTextColor="#94a3b8"
                   keyboardType="phone-pad"
                   value={phoneNumber}
@@ -228,83 +220,33 @@ export default function CreateClientScreen({
             {errors.phone ? <Text style={styles.errorText}>{errors.phone}</Text> : null}
           </View>
 
+          {/* City (The only address field) */}
           <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Adresse Email (Optionnel)</Text>
-            <View style={[styles.inputContainer, errors.email ? styles.inputError : null]}>
-              <Mail size={18} color={errors.email ? '#ef4444' : '#64748b'} strokeWidth={2.2} />
+            <View style={styles.labelRow}>
+              <Text style={styles.fieldLabel}>Ville</Text>
+              <Text style={styles.requiredStar}>*</Text>
+            </View>
+            <View style={[styles.inputContainer, errors.city ? styles.inputError : null]}>
+              <MapPin size={18} color={errors.city ? '#ef4444' : '#2563eb'} strokeWidth={2.2} />
               <TextInput
                 style={styles.textInput}
-                placeholder="Ex : ahmed.idrissi@example.com"
+                placeholder="Ex : Casablanca, Paris, Tanger, Lyon..."
                 placeholderTextColor="#94a3b8"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
+                value={city}
                 onChangeText={(text) => {
-                  setEmail(text);
-                  if (errors.email) setErrors({ ...errors, email: '' });
+                  setCity(text);
+                  if (errors.city) setErrors({ ...errors, city: '' });
                 }}
               />
             </View>
-            {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
-          </View>
-        </View>
-
-        <View style={styles.formSection}>
-          <Text style={styles.sectionTitle}>Adresses Spécifiques</Text>
-
-          <View style={styles.fieldGroup}>
-            <View style={styles.addressSectionHeader}>
-              <MoroccoFlagBadge size={20} />
-              <Text style={styles.addressLabel}>Adresse au Maroc</Text>
-            </View>
-            <View style={styles.inputContainer}>
-              <MapPin size={18} color="#dc2626" strokeWidth={2.2} />
-              <TextInput
-                style={styles.textInput}
-                placeholder="Ex : 24 Rue de Goulmima, Bourgogne, Casablanca"
-                placeholderTextColor="#94a3b8"
-                value={addressMorocco}
-                onChangeText={setAddressMorocco}
-              />
-            </View>
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <View style={styles.addressSectionHeader}>
-              <FranceFlagBadge size={20} />
-              <Text style={styles.addressLabel}>Adresse en France</Text>
-            </View>
-            <View style={styles.inputContainer}>
-              <MapPin size={18} color="#2563eb" strokeWidth={2.2} />
-              <TextInput
-                style={styles.textInput}
-                placeholder="Ex : 142 Rue de Rivoli, 75001 Paris"
-                placeholderTextColor="#94a3b8"
-                value={addressFrance}
-                onChangeText={setAddressFrance}
-              />
-            </View>
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Ville principale</Text>
-            <View style={styles.inputContainer}>
-              <Building2 size={18} color="#64748b" strokeWidth={2.2} />
-              <TextInput
-                style={styles.textInput}
-                placeholder="Ex : Casablanca / Paris"
-                placeholderTextColor="#94a3b8"
-                value={city}
-                onChangeText={setCity}
-              />
-            </View>
+            {errors.city ? <Text style={styles.errorText}>{errors.city}</Text> : null}
           </View>
         </View>
 
         <View style={styles.infoNoticeBox}>
           <ShieldCheck size={20} color="#2563eb" strokeWidth={2.2} />
           <Text style={styles.infoNoticeText}>
-            Les informations du client seront synchronisées avec la base de données locale et associées lors de la création d’un envoi.
+            Les informations du client (nom complet, ville et téléphone) seront enregistrées pour gérer ses expéditions.
           </Text>
         </View>
       </ScrollView>
@@ -418,14 +360,12 @@ const styles = StyleSheet.create({
     color: '#334155',
     fontSize: 13,
     fontWeight: '700',
-    marginBottom: 6,
   },
   requiredStar: {
     color: '#dc2626',
     fontSize: 13,
     fontWeight: '700',
     marginLeft: 4,
-    marginBottom: 6,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -500,17 +440,6 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
     paddingHorizontal: 14,
     paddingVertical: 11,
-  },
-  addressSectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-    gap: 8,
-  },
-  addressLabel: {
-    color: '#334155',
-    fontSize: 13,
-    fontWeight: '700',
   },
   infoNoticeBox: {
     flexDirection: 'row',

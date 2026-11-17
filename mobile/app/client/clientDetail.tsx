@@ -16,7 +16,6 @@ import {
 import {
   X,
   Phone,
-  Mail,
   MapPin,
   Package,
   Calendar,
@@ -28,7 +27,6 @@ import {
   Trash2,
   Check,
   User,
-  Building2,
   AlertTriangle,
 } from 'lucide-react-native';
 import { Client } from './clientPage';
@@ -60,10 +58,7 @@ export const ClientDetailModal: React.FC<ClientDetailProps> = ({
   const [editName, setEditName] = useState('');
   const [editCountryCode, setEditCountryCode] = useState<'+212' | '+33'>('+212');
   const [editPhone, setEditPhone] = useState('');
-  const [editEmail, setEditEmail] = useState('');
   const [editCity, setEditCity] = useState('');
-  const [editAddressMorocco, setEditAddressMorocco] = useState('');
-  const [editAddressFrance, setEditAddressFrance] = useState('');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
@@ -77,10 +72,7 @@ export const ClientDetailModal: React.FC<ClientDetailProps> = ({
       const rawNumber = client.phone.replace('+212', '').replace('+33', '').trim();
       setEditPhone(rawNumber);
       
-      setEditEmail(client.email || '');
       setEditCity(client.city || '');
-      setEditAddressMorocco(client.addressMorocco || client.address || '');
-      setEditAddressFrance(client.addressFrance || '');
       setErrors({});
     }
   }, [client, visible]);
@@ -119,13 +111,6 @@ export const ClientDetailModal: React.FC<ClientDetailProps> = ({
     });
   };
 
-  const handleEmail = () => {
-    if (!client.email) return;
-    Linking.openURL(`mailto:${client.email}`).catch(() => {
-      Alert.alert('Email', `Envoi d'un email à ${client.email}`);
-    });
-  };
-
   const handleDelete = () => {
     const hasColis = clientColis.length > 0;
     
@@ -160,8 +145,8 @@ export const ClientDetailModal: React.FC<ClientDetailProps> = ({
       newErrors.phone = 'Le téléphone est obligatoire';
     }
 
-    if (editEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editEmail.trim())) {
-      newErrors.email = 'Format d’email invalide';
+    if (!editCity.trim()) {
+      newErrors.city = 'La ville est obligatoire';
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -174,11 +159,7 @@ export const ClientDetailModal: React.FC<ClientDetailProps> = ({
       ...client,
       name: editName.trim(),
       phone: fullPhone,
-      email: editEmail.trim() || undefined,
-      city: editCity.trim() || client.city,
-      address: editAddressMorocco.trim() || editAddressFrance.trim() || client.address,
-      addressMorocco: editAddressMorocco.trim() || undefined,
-      addressFrance: editAddressFrance.trim() || undefined,
+      city: editCity.trim(),
     };
 
     onUpdateClient?.(updatedClient);
@@ -366,118 +347,40 @@ export const ClientDetailModal: React.FC<ClientDetailProps> = ({
                 </View>
 
                 <View style={styles.fieldGroup}>
-                  <Text style={styles.fieldLabel}>Adresse Email</Text>
-                  <View style={[styles.inputContainer, errors.email ? styles.inputError : null]}>
-                    <Mail size={17} color="#64748b" strokeWidth={2.2} />
-                    <TextInput
-                      style={styles.textInput}
-                      value={editEmail}
-                      onChangeText={setEditEmail}
-                      placeholder="email@example.com"
-                      placeholderTextColor="#94a3b8"
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                    />
-                  </View>
-                  {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
-                </View>
-
-                <View style={styles.fieldGroup}>
-                  <View style={styles.alignCenterRow}>
-                    <MoroccoFlagBadge size={16} />
-                    <Text style={[styles.fieldLabel, { marginLeft: 6, marginBottom: 0 }]}>
-                      Adresse au Maroc
-                    </Text>
-                  </View>
-                  <View style={[styles.inputContainer, { marginTop: 6 }]}>
-                    <MapPin size={17} color="#dc2626" strokeWidth={2.2} />
-                    <TextInput
-                      style={styles.textInput}
-                      value={editAddressMorocco}
-                      onChangeText={setEditAddressMorocco}
-                      placeholder="Rue, quartier, ville au Maroc"
-                      placeholderTextColor="#94a3b8"
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.fieldGroup}>
-                  <View style={styles.alignCenterRow}>
-                    <FranceFlagBadge size={16} />
-                    <Text style={[styles.fieldLabel, { marginLeft: 6, marginBottom: 0 }]}>
-                      Adresse en France
-                    </Text>
-                  </View>
-                  <View style={[styles.inputContainer, { marginTop: 6 }]}>
+                  <Text style={styles.fieldLabel}>Ville *</Text>
+                  <View style={[styles.inputContainer, errors.city ? styles.inputError : null]}>
                     <MapPin size={17} color="#2563eb" strokeWidth={2.2} />
-                    <TextInput
-                      style={styles.textInput}
-                      value={editAddressFrance}
-                      onChangeText={setEditAddressFrance}
-                      placeholder="Rue, code postal, ville en France"
-                      placeholderTextColor="#94a3b8"
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.fieldGroup}>
-                  <Text style={styles.fieldLabel}>Ville principale</Text>
-                  <View style={styles.inputContainer}>
-                    <Building2 size={17} color="#64748b" strokeWidth={2.2} />
                     <TextInput
                       style={styles.textInput}
                       value={editCity}
                       onChangeText={setEditCity}
-                      placeholder="Casablanca / Paris"
+                      placeholder="Ex : Casablanca, Paris, Tanger..."
                       placeholderTextColor="#94a3b8"
                     />
                   </View>
+                  {errors.city ? <Text style={styles.errorText}>{errors.city}</Text> : null}
                 </View>
               </View>
             ) : (
               /* --- VIEW DETAILS MODE --- */
               <>
-                {/* Section: Adresses Enregistrées */}
+                {/* Section: Ville */}
                 <View style={styles.sectionContainer}>
                   <Text style={styles.sectionCategoryTitle}>
-                    Adresses Enregistrées
+                    Ville
                   </Text>
 
-                  {/* Adresse Maroc Card */}
-                  <View style={styles.addressCard}>
-                    <View style={styles.addressCardHeader}>
-                      <View style={styles.alignCenterRow}>
-                        <MoroccoFlagBadge size={22} />
-                        <Text style={styles.addressCountryLabel}>Adresse Maroc</Text>
+                  <View style={styles.cityCard}>
+                    <View style={styles.alignCenterRow}>
+                      <View style={styles.pinIconBadge}>
+                        <MapPin size={17} color="#2563eb" strokeWidth={2.4} />
                       </View>
-                    </View>
-
-                    <View style={styles.addressBodyRow}>
-                      <View style={[styles.pinIconBadge, { backgroundColor: '#fee2e2' }]}>
-                        <MapPin size={15} color="#dc2626" strokeWidth={2.4} />
+                      <View style={{ flex: 1, marginLeft: 10 }}>
+                        <Text style={styles.cityLabel}>Ville</Text>
+                        <Text style={styles.cityValueText}>
+                          {client.city || 'Non renseignée'}
+                        </Text>
                       </View>
-                      <Text style={styles.addressValueText}>
-                        {client.addressMorocco || client.address || client.city || 'Non renseignée'}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Adresse France Card */}
-                  <View style={styles.addressCard}>
-                    <View style={styles.addressCardHeader}>
-                      <View style={styles.alignCenterRow}>
-                        <FranceFlagBadge size={22} />
-                        <Text style={styles.addressCountryLabel}>Adresse France</Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.addressBodyRow}>
-                      <View style={[styles.pinIconBadge, { backgroundColor: '#e0e7ff' }]}>
-                        <MapPin size={15} color="#2563eb" strokeWidth={2.4} />
-                      </View>
-                      <Text style={styles.addressValueText}>
-                        {client.addressFrance || 'Non renseignée'}
-                      </Text>
                     </View>
                   </View>
                 </View>
@@ -505,24 +408,6 @@ export const ClientDetailModal: React.FC<ClientDetailProps> = ({
                       </View>
                       {isMorocco ? <MoroccoFlagBadge size={20} /> : <FranceFlagBadge size={20} />}
                     </TouchableOpacity>
-
-                    {client.email ? (
-                      <TouchableOpacity
-                        style={[styles.contactRow, styles.contactRowBorder]}
-                        onPress={handleEmail}
-                        activeOpacity={0.7}
-                      >
-                        <View style={styles.contactLeft}>
-                          <View style={styles.contactIconCircle}>
-                            <Mail size={15} color="#2563eb" strokeWidth={2.2} />
-                          </View>
-                          <View style={styles.contactTextGroup}>
-                            <Text style={styles.contactSublabel}>Email</Text>
-                            <Text style={styles.contactMainText}>{client.email}</Text>
-                          </View>
-                        </View>
-                      </TouchableOpacity>
-                    ) : null}
                   </View>
                 </View>
 
@@ -824,8 +709,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  // Address Cards
-  addressCard: {
+  // City Card
+  cityCard: {
     backgroundColor: '#f8fafc',
     borderRadius: 16,
     padding: 14,
@@ -833,42 +718,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e2e8f0',
   },
-  addressCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
+  cityLabel: {
+    color: '#64748b',
+    fontSize: 11,
+    fontWeight: '600',
   },
-  addressCountryLabel: {
-    color: '#1e293b',
-    fontSize: 13,
+  cityValueText: {
+    color: '#0f172a',
+    fontSize: 14,
     fontWeight: '700',
-    marginLeft: 8,
-  },
-  addressBodyRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
+    marginTop: 2,
   },
   pinIconBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#eff6ff',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
-    marginTop: 1,
-  },
-  addressValueText: {
-    color: '#334155',
-    fontSize: 12.5,
-    fontWeight: '500',
-    lineHeight: 18,
-    flex: 1,
   },
   // Contact Box
   contactContainer: {
@@ -884,10 +751,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 14,
     paddingVertical: 12,
-  },
-  contactRowBorder: {
-    borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
   },
   contactLeft: {
     flexDirection: 'row',
