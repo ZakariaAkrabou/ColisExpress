@@ -1,7 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 
 export interface ICounter {
-  _id: string; // counter name, e.g. "colis_order"
+  _id: string; 
   seq: number;
 }
 
