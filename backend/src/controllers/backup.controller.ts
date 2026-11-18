@@ -5,7 +5,7 @@ import { BackupService } from '../services/backup.service';
 export class BackupController {
     static async getAuthUrl(req: AuthRequest, res: Response): Promise<void> {
         try {
-         
+
             const adminId = req.user!.id.toString();
 
             const url = await BackupService.getAuthUrl(adminId);
@@ -41,6 +41,26 @@ export class BackupController {
             res.status(200).json({ connected });
         } catch (error: any) {
             res.status(500).json({ message: 'Error checking status', error: error.message });
+        }
+    }
+
+    static async createBackup(req: AuthRequest, res: Response): Promise<void> {
+        try {
+            const userId = req.user!.id.toString();
+            const log = await BackupService.createBackup(userId);
+            res.status(200).json({ message: 'Backup created and uploaded successfully', data: log });
+        } catch (error: any) {
+            res.status(500).json({ message: 'Backup failed', error: error.message });
+        }
+    }
+
+    static async getHistory(req: AuthRequest, res: Response): Promise<void> {
+        try {
+            const userId = req.user!.id.toString();
+            const history = await BackupService.getBackupHistory(userId);
+            res.status(200).json({ data: history });
+        } catch (error: any) {
+            res.status(500).json({ message: 'Error fetching history', error: error.message });
         }
     }
 }

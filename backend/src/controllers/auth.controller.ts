@@ -18,7 +18,7 @@ export class AuthController {
       });
     } catch (error: any) {
      
-      if (error.message === 'Invalid credentials' || error.message === 'Account is disabled') {
+      if (error.message === 'email or password is incorrect' || error.message === 'Account is disabled') {
         res.status(401).json({ message: error.message });
         return;
       }

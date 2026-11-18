@@ -16,7 +16,7 @@ const BackupAuthSchema: Schema = new Schema(
   { timestamps: true }
 );
 
-export const BackupAuth = mongoose.model<IBackupAuth>('BackupAuth', BackupAuthSchema);
+export const BackupAuth = mongoose.model<IBackupAuth>('BackupAuth', BackupAuthSchema, 'backup_auth');
 
 
 export interface IBackupLog extends Document {
@@ -40,5 +40,4 @@ const BackupLogSchema: Schema = new Schema(
   },
   { timestamps: true }
 );
-
-export const BackupLog = mongoose.model<IBackupLog>('BackupLog', BackupLogSchema);
+export const BackupLog = mongoose.model<IBackupLog>('BackupLog', BackupLogSchema, 'backup_logs');

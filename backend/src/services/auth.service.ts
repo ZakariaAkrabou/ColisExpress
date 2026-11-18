@@ -7,12 +7,12 @@ export class AuthService {
         const user = await User.findOne({ email });
 
         if (!user) {
-            throw new Error('Invalid credentials');
+            throw new Error(' email or password is incorrect');
         }
 
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
-            throw new Error('Invalid credentials');
+            throw new Error(' email or password is incorrect');
         }
 
         if (!user.isActive) {

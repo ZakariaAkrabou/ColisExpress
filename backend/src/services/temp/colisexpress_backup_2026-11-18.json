@@ -1,0 +1,86 @@
+{
+  "users": [
+    {
+      "tokenVersion": 0,
+      "_id": "6aedec924e778b827ccad412",
+      "name": "Super Admin",
+      "email": "admin@colisexpress.com",
+      "password": "$2b$10$8xI1PqUn8jbDYlkUm/oLGeIc3bTFWYaH34Wh1PJo8CEMSHIpEnPuW",
+      "role": "admin",
+      "isActive": true,
+      "createdAt": "2026-11-06T15:04:50.661Z",
+      "updatedAt": "2026-11-06T15:04:50.661Z",
+      "__v": 0
+    },
+    {
+      "tokenVersion": 0,
+      "_id": "6afa20749a13c3453c5f0cc5",
+      "name": "Ramasseur Casablanca",
+      "email": "ramasseur1@colisexpress.com",
+      "password": "$2b$10$r/yeDzOOuaBzrIIkYJmEj.auWiLx.MLgjU3MXeMLGZLJjaOqp9tfu",
+      "role": "ramasseur",
+      "isActive": true,
+      "createdAt": "2026-11-15T21:13:24.779Z",
+      "updatedAt": "2026-11-15T21:27:15.556Z",
+      "__v": 0
+    },
+    {
+      "_id": "6afce024ed7e7da7a8c9be4f",
+      "name": "Ramasseur Casablanca",
+      "email": "ramasseur11@colisexpress.com",
+      "password": "$2b$10$rlHfrfAajCO7EYl.AEn8ZOdtN/TCiE8lNkgRpWeYFstPVQqieHuEG",
+      "role": "ramasseur",
+      "isActive": true,
+      "tokenVersion": 0,
+      "createdAt": "2026-11-17T23:15:48.239Z",
+      "updatedAt": "2026-11-17T23:18:12.145Z",
+      "__v": 0
+    }
+  ],
+  "locations": [
+    {
+      "_id": "6af5eb451e60ba84dc642e38",
+      "name": "Casablanca",
+      "country": "Maroc",
+      "isActive": true,
+      "createdAt": "2026-11-12T16:37:25.864Z",
+      "updatedAt": "2026-11-12T16:37:25.864Z",
+      "__v": 0
+    },
+    {
+      "_id": "6af5eb6cf668b1d1a6520ee9",
+      "name": "Lile",
+      "country": "France",
+      "isActive": true,
+      "createdAt": "2026-11-12T16:38:04.563Z",
+      "updatedAt": "2026-11-12T16:38:04.563Z",
+      "__v": 0
+    }
+  ],
+  "clients": [],
+  "colis": [
+    {
+      "_id": "6af849b1e8dbfc04981276a9",
+      "senderName": "Youssef Bennani",
+      "senderPhone": "+212 6 61 11 22 33",
+      "receiverName": "Thomas Dubois",
+      "receiverPhone": "+33 6 12 34 56 78",
+      "fromCity": "Casablanca",
+      "toCity": "Paris",
+      "weight": 5.2,
+      "price": 180,
+      "quantity": 20,
+      "orderInCommand": 1,
+      "ncommand": "1/20",
+      "isPaid": true,
+      "isADomicile": true,
+      "status": "pending",
+      "date": "14/11/2026",
+      "description": "Documents administratifs et cadeaux",
+      "direction": "MA_TO_FR",
+      "createdAt": "2026-11-14T11:44:49.274Z",
+      "updatedAt": "2026-11-14T11:45:06.390Z"
+    }
+  ],
+  "exportedAt": "2026-11-18T13:56:57.893Z"
+}
