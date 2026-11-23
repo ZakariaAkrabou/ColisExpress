@@ -63,4 +63,50 @@ export class BackupController {
             res.status(500).json({ message: 'Error fetching history', error: error.message });
         }
     }
+
+    static async restore(req: AuthRequest, res: Response): Promise<void> {
+        try {
+            const userId = req.user!.id.toString();
+            const { fileId } = req.body;
+
+            if (!fileId) {
+                res.status(400).json({ message: 'fileId is required' });
+                return;
+            }
+
+            const result = await BackupService.restoreBackup(userId, fileId);
+            res.status(200).json(result);
+        } catch (error: any) {
+            res.status(500).json({ message: 'Restore failed', error: error.message });
+        }
+    }
+
+    static async reset(req: AuthRequest, res: Response): Promise<void> {
+        try {
+            const userId = req.user!.id.toString();
+            const result = await BackupService.resetDatabase(userId);
+            res.status(200).json(result);
+        } catch (error: any) {
+            res.status(500).json({ message: 'Reset failed', error: error.message });
+        }
+    }
+
+    static async importFile(req: AuthRequest, res: Response): Promise<void> {
+    try {
+   
+      if (!req.file) {
+        res.status(400).json({ message: 'Please upload a ZIP file.' });
+        return;
+      }
+
+      const userId = req.user!.id.toString();
+      const zipPath = req.file.path; 
+
+      const result = await BackupService.importFromLocalZip(userId, zipPath);
+      
+      res.status(200).json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: 'Import failed', error: error.message });
+    }
+  }
 }
