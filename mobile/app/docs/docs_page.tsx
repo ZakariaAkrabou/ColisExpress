@@ -26,6 +26,10 @@ import {
   AlertCircle,
   Eye,
   X,
+  Scale,
+  Coins,
+  Home,
+  AlertTriangle,
 } from 'lucide-react-native';
 import { Colis } from '../colis/create-colis';
 import {
@@ -403,10 +407,20 @@ export default function DocsPage({
                           </Text>
                         </View>
                       </View>
-                      <Text style={styles.cityMetaText}>
-                        Poids : {Math.round(group.totalWeight * 10) / 10} kg • Total : {group.totalPrice} MAD
-                        {group.unpaidCount > 0 ? ` • ⚠️ ${group.unpaidCount} non payé(s)` : ''}
-                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <Text style={styles.cityMetaText}>
+                          Poids : {Math.round(group.totalWeight * 10) / 10} kg • Total : {group.totalPrice} MAD
+                        </Text>
+                        {group.unpaidCount > 0 ? (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 4 }}>
+                            <Text style={styles.cityMetaText}>• </Text>
+                            <AlertTriangle size={11} color="#d97706" strokeWidth={2.4} style={{ marginRight: 3 }} />
+                            <Text style={[styles.cityMetaText, { color: '#d97706', fontWeight: '700' }]}>
+                              {group.unpaidCount} non payé(s)
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
                     </View>
                   </View>
 
@@ -480,11 +494,24 @@ export default function DocsPage({
                             </View>
 
                             <View style={styles.parcelDetailsRow}>
-                              <Text style={styles.parcelSpecText}>⚖️ {item.weight} kg</Text>
-                              <Text style={styles.parcelSpecText}>💰 {item.price} MAD</Text>
-                              <Text style={styles.parcelSpecText}>
-                                {item.isADomicile !== false ? '🏠 Domicile' : '📦 Relais'}
-                              </Text>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10 }}>
+                                <Scale size={11} color="#64748b" strokeWidth={2.2} style={{ marginRight: 3 }} />
+                                <Text style={styles.parcelSpecText}>{item.weight} kg</Text>
+                              </View>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10 }}>
+                                <Coins size={11} color="#64748b" strokeWidth={2.2} style={{ marginRight: 3 }} />
+                                <Text style={styles.parcelSpecText}>{item.price} MAD</Text>
+                              </View>
+                              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                {item.isADomicile !== false ? (
+                                  <Home size={11} color="#64748b" strokeWidth={2.2} style={{ marginRight: 3 }} />
+                                ) : (
+                                  <Package size={11} color="#64748b" strokeWidth={2.2} style={{ marginRight: 3 }} />
+                                )}
+                                <Text style={styles.parcelSpecText}>
+                                  {item.isADomicile !== false ? 'Domicile' : 'Relais'}
+                                </Text>
+                              </View>
                             </View>
                           </View>
 

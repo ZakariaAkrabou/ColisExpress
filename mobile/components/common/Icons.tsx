@@ -128,44 +128,12 @@ export const MoroccoFlagCircle = ({ size = 42 }: { size?: number }) => {
 
 // Morocco Flag Badge
 export const MoroccoFlagBadge = ({ size = 26 }: { size?: number }) => {
-  return (
-    <View
-      style={[
-        styles.flagBadgeContainer,
-        {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          backgroundColor: '#fef2f2',
-          borderWidth: 1,
-          borderColor: '#fecaca',
-        },
-      ]}
-    >
-      <Text style={{ fontSize: size * 0.6, textAlign: 'center' }}>🇲🇦</Text>
-    </View>
-  );
+  return <MoroccoFlagCircle size={size} />;
 };
 
 // France Flag Badge
 export const FranceFlagBadge = ({ size = 26 }: { size?: number }) => {
-  return (
-    <View
-      style={[
-        styles.flagBadgeContainer,
-        {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          backgroundColor: '#eff6ff',
-          borderWidth: 1,
-          borderColor: '#bfdbfe',
-        },
-      ]}
-    >
-      <Text style={{ fontSize: size * 0.6, textAlign: 'center' }}>🇫🇷</Text>
-    </View>
-  );
+  return <FranceFlagCircle size={size} />;
 };
 
 const styles = StyleSheet.create({

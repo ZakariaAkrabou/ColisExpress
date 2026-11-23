@@ -10,7 +10,21 @@ import {
   Alert,
   Image,
 } from 'react-native';
-import { Edit3, X, Check } from 'lucide-react-native';
+import {
+  Edit3,
+  X,
+  Check,
+  Zap,
+  CreditCard,
+  Home,
+  Package,
+  Image as ImageIcon,
+  User,
+  MapPin,
+  Clock,
+  Truck,
+  CheckCircle2,
+} from 'lucide-react-native';
 import { Colis } from './create-colis';
 
 export interface UpdateColisProps {
@@ -122,7 +136,10 @@ export default function UpdateColis({
 
           <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
             {/* Status Selection */}
-            <Text style={styles.formSectionTitle}>⚡ Statut de l'envoi</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+              <Zap size={14} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
+              <Text style={[styles.formSectionTitle, { marginBottom: 0 }]}>Statut de l'envoi</Text>
+            </View>
             <View style={styles.statusPickerRow}>
               {(['pending', 'in_transit', 'delivered'] as const).map((st) => (
                 <TouchableOpacity
@@ -130,24 +147,35 @@ export default function UpdateColis({
                   style={[
                     styles.statusChip,
                     status === st && styles.statusChipActive,
+                    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
                   ]}
                   onPress={() => setStatus(st)}
                   activeOpacity={0.8}
                 >
+                  {st === 'pending' ? (
+                    <Clock size={12} color={status === st ? '#FFFFFF' : '#b45309'} strokeWidth={2.4} style={{ marginRight: 4 }} />
+                  ) : st === 'in_transit' ? (
+                    <Truck size={12} color={status === st ? '#FFFFFF' : '#1d4ed8'} strokeWidth={2.4} style={{ marginRight: 4 }} />
+                  ) : (
+                    <CheckCircle2 size={12} color={status === st ? '#FFFFFF' : '#15803d'} strokeWidth={2.4} style={{ marginRight: 4 }} />
+                  )}
                   <Text
                     style={[
                       styles.statusChipText,
                       status === st && styles.statusChipActiveText,
                     ]}
                   >
-                    {st === 'pending' ? '⏳ En attente' : st === 'in_transit' ? '🚚 En transit' : '✅ Livré'}
+                    {st === 'pending' ? 'En attente' : st === 'in_transit' ? 'En transit' : 'Livré'}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             {/* Radio Buttons for Payment Status */}
-            <Text style={styles.formSectionTitle}>💳 Statut de paiement (Payé)</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, marginTop: 12 }}>
+              <CreditCard size={14} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
+              <Text style={[styles.formSectionTitle, { marginBottom: 0 }]}>Statut de paiement (Payé)</Text>
+            </View>
             <View style={styles.radioGroup}>
               <TouchableOpacity
                 style={[
@@ -203,7 +231,10 @@ export default function UpdateColis({
             </View>
 
             {/* Radio Buttons for Delivery Mode */}
-            <Text style={styles.formSectionTitle}>🏠 Mode de livraison</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, marginTop: 12 }}>
+              <Home size={14} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
+              <Text style={[styles.formSectionTitle, { marginBottom: 0 }]}>Mode de livraison</Text>
+            </View>
             <View style={styles.radioGroup}>
               <TouchableOpacity
                 style={[
@@ -221,13 +252,14 @@ export default function UpdateColis({
                 >
                   {isADomicile === true && <View style={styles.radioInnerCircle} />}
                 </View>
+                <Home size={14} color={isADomicile === true ? '#15803d' : '#64748b'} strokeWidth={2.2} style={{ marginRight: 6 }} />
                 <Text
                   style={[
                     styles.radioText,
                     isADomicile === true && styles.radioTextSelectedSuccess,
                   ]}
                 >
-                  🏠 À domicile
+                  À domicile
                 </Text>
               </TouchableOpacity>
 
@@ -247,19 +279,23 @@ export default function UpdateColis({
                 >
                   {isADomicile === false && <View style={styles.radioInnerCircle} />}
                 </View>
+                <Package size={14} color={isADomicile === false ? '#15803d' : '#64748b'} strokeWidth={2.2} style={{ marginRight: 6 }} />
                 <Text
                   style={[
                     styles.radioText,
                     isADomicile === false && styles.radioTextSelectedSuccess,
                   ]}
                 >
-                  📦 Point relais
+                  Point relais
                 </Text>
               </TouchableOpacity>
             </View>
 
             {/* Image Selection */}
-            <Text style={styles.formSectionTitle}>🖼️ Photo du colis</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, marginTop: 12 }}>
+              <ImageIcon size={14} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
+              <Text style={[styles.formSectionTitle, { marginBottom: 0 }]}>Photo du colis</Text>
+            </View>
             <View style={styles.imageSelectorContainer}>
               {PRESET_IMAGES.map((imgUrl, index) => (
                 <TouchableOpacity
@@ -289,7 +325,10 @@ export default function UpdateColis({
             />
 
             {/* Sender Details */}
-            <Text style={styles.formSectionTitle}>👤 Expéditeur (Départ)</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, marginTop: 12 }}>
+              <User size={14} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
+              <Text style={[styles.formSectionTitle, { marginBottom: 0 }]}>Expéditeur (Départ)</Text>
+            </View>
             <TextInput
               style={styles.formInput}
               placeholder="Nom complet de l'expéditeur *"
@@ -314,7 +353,10 @@ export default function UpdateColis({
             />
 
             {/* Receiver Details */}
-            <Text style={styles.formSectionTitle}>📍 Destinataire (Arrivée)</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, marginTop: 12 }}>
+              <MapPin size={14} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
+              <Text style={[styles.formSectionTitle, { marginBottom: 0 }]}>Destinataire (Arrivée)</Text>
+            </View>
             <TextInput
               style={styles.formInput}
               placeholder="Nom complet du destinataire *"
@@ -339,7 +381,10 @@ export default function UpdateColis({
             />
 
             {/* Package Specifications */}
-            <Text style={styles.formSectionTitle}>📦 Spécifications du colis</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, marginTop: 12 }}>
+              <Package size={14} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
+              <Text style={[styles.formSectionTitle, { marginBottom: 0 }]}>Spécifications du colis</Text>
+            </View>
             <View style={styles.specInputRow}>
               <TextInput
                 style={[styles.formInput, { flex: 1, marginRight: 6 }]}

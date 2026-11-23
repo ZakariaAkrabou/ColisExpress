@@ -1,4 +1,6 @@
+//clientPage.tsx
 import React, { useState } from 'react';
+
 import {
   View,
   Text,
@@ -34,9 +36,9 @@ export interface Client {
 export interface ClientsPageProps {
   clientsList: Client[];
   colisList?: Colis[];
-  onAddClient?: (client: Client) => void;
-  onUpdateClient?: (updatedClient: Client) => void;
-  onDeleteClient?: (clientId: string) => void;
+  onAddClient?: (client: Client) => Promise<boolean>;
+  onUpdateClient?: (updatedClient: Client) => Promise<boolean>;
+  onDeleteClient?: (clientId: string) => Promise<boolean>;
   onOpenCreateClient?: () => void;
   onClientPress?: (client: Client) => void;
 }
@@ -79,28 +81,42 @@ export default function ClientsPage({
     }
   };
 
-  const handleUpdate = (updatedClient: Client) => {
+const handleUpdate = async (updatedClient: Client): Promise<boolean> => {
+  const success = await onUpdateClient?.(updatedClient);
+
+  if (success) {
     setSelectedClient(updatedClient);
-    onUpdateClient?.(updatedClient);
-  };
-
-  const handleDelete = (clientId: string) => {
-    setSelectedClient(null);
-    onDeleteClient?.(clientId);
-  };
-
-  if (isCreatingClient) {
-    return (
-      <CreateClientScreen
-        onBack={() => setIsCreatingClient(false)}
-        onClientCreated={(newClient) => {
-          onAddClient?.(newClient);
-          setIsCreatingClient(false);
-        }}
-        existingClients={clientsList}
-      />
-    );
   }
+
+  return success ?? false;
+};
+
+const handleDelete = async (clientId: string): Promise<boolean> => {
+  const success = await onDeleteClient?.(clientId);
+
+  if (success) {
+    setSelectedClient(null);
+  }
+
+  return success ?? false;
+};
+
+
+if (isCreatingClient) {
+  return (
+    <CreateClientScreen
+      onBack={() => setIsCreatingClient(false)}
+      onClientCreated={async (newClient) => {
+        const success = await onAddClient?.(newClient);
+
+        if (success) {
+          setIsCreatingClient(false);
+        }
+      }}
+      existingClients={clientsList}
+    />
+  );
+}
 
   return (
     <View style={styles.container} className="flex-1 bg-slate-50">

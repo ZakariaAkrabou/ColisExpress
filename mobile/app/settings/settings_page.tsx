@@ -401,7 +401,7 @@ export default function SettingsPage({
   // --- RESTORE / EMPTY ALL DATA ---
   const handleEmptyAllData = () => {
     Alert.alert(
-      '⚠️ Vider toutes les données',
+      'Vider toutes les données',
       'Êtes-vous absolument sûr de vouloir supprimer TOUTES les données ?\n\nCette action supprimera définitivement l’intégralité des colis (' +
         activeColisList.length +
         ') et des clients (' +

@@ -1,17 +1,27 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, StatusBar } from 'react-native';
+
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, StatusBar, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import HomeScreen from './home/home';
 import ColisPage, { Colis } from './colis/colis_page';
 import ClientsPage, { Client } from './client/clientPage';
 import LocationsPage from './locations/locations_page';
 import DocsPage from './docs/docs_page';
 import SettingsPage from './settings_page';
+
 import Header from '../components/layout/Header';
 import Footer, { TabType } from '../components/layout/Footer';
 import SplashScreen from './auth/splash';
 import LoginScreen from './auth/login';
-import { INITIAL_COLIS, INITIAL_CLIENTS } from '../services/mockData';
+
+import { INITIAL_COLIS } from '../services/mockData';
+import {
+  getClients,
+  createClient,
+  updateClient,
+  deleteClient,
+} from '../services/clientService';
 
 type AppFlowState = 'splash' | 'login' | 'app';
 export type AppRoute = TabType;
@@ -20,15 +30,48 @@ export default function AppScreen() {
   const [flowState, setFlowState] = useState<AppFlowState>('splash');
   const [currentRoute, setCurrentRoute] = useState<AppRoute>('home');
   const [direction, setDirection] = useState<'MA_TO_FR' | 'FR_TO_MA'>('MA_TO_FR');
+
   const [colisList, setColisList] = useState<Colis[]>(INITIAL_COLIS);
-  const [clientsList, setClientsList] = useState<Client[]>(INITIAL_CLIENTS);
+  const [clientsList, setClientsList] = useState<Client[]>([]);
+
+  // Load clients from MongoDB when the app starts.
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadClients = async () => {
+      try {
+        const clients = await getClients();
+
+        if (isMounted) {
+          setClientsList(clients);
+        }
+      } catch (error: any) {
+        const message =
+          error?.response?.data?.message ||
+          error?.message ||
+          'Impossible de récupérer les clients.';
+
+        if (isMounted) {
+          Alert.alert('Erreur de connexion', message);
+        }
+      }
+    };
+
+    loadClients();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const toggleDirection = () => {
     setDirection((prev) => (prev === 'MA_TO_FR' ? 'FR_TO_MA' : 'MA_TO_FR'));
   };
 
+  // ---------------- COLIS: existing local behavior ----------------
+
   const handleAddColis = (newColis: Colis) => {
-    setColisList([newColis, ...colisList]);
+    setColisList((prev) => [newColis, ...prev]);
   };
 
   const handleUpdateColis = (updatedColis: Colis) => {
@@ -37,29 +80,95 @@ export default function AppScreen() {
     );
   };
 
-  const handleAddClient = (newClient: Client) => {
-    setClientsList([newClient, ...clientsList]);
+  // ---------------- CLIENTS: MongoDB API ----------------
+
+  const handleAddClient = async (newClient: Client): Promise<boolean> => {
+    try {
+      // The server generates the real MongoDB ID.
+      const savedClient = await createClient({
+        name: newClient.name,
+        phone: newClient.phone,
+        city: newClient.city,
+      });
+
+      setClientsList((prev) => [savedClient, ...prev]);
+      Alert.alert('Succès', 'Le client a été enregistré avec succès.');
+
+      return true;
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Impossible d’enregistrer le client.';
+
+      Alert.alert('Erreur', message);
+      return false;
+    }
   };
 
-  const handleUpdateClient = (updatedClient: Client) => {
-    setClientsList((prev) =>
-      prev.map((c) => (c.id === updatedClient.id ? updatedClient : c))
-    );
+  const handleUpdateClient = async (
+    updatedClient: Client
+  ): Promise<boolean> => {
+    try {
+      const savedClient = await updateClient(updatedClient.id, {
+        name: updatedClient.name,
+        phone: updatedClient.phone,
+        city: updatedClient.city,
+      });
+
+      setClientsList((prev) =>
+        prev.map((client) =>
+          client.id === savedClient.id ? savedClient : client
+        )
+      );
+
+      Alert.alert('Succès', 'Les informations du client ont été modifiées.');
+      return true;
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Impossible de modifier le client.';
+
+      Alert.alert('Erreur', message);
+      return false;
+    }
   };
 
-  const handleDeleteClient = (clientId: string) => {
-    setClientsList((prev) => prev.filter((c) => c.id !== clientId));
+  const handleDeleteClient = async (
+    clientId: string
+  ): Promise<boolean> => {
+    try {
+      await deleteClient(clientId);
+
+      setClientsList((prev) =>
+        prev.filter((client) => client.id !== clientId)
+      );
+
+      Alert.alert('Succès', 'Le client a été supprimé.');
+      return true;
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Impossible de supprimer le client.';
+
+      Alert.alert('Erreur', message);
+      return false;
+    }
   };
 
-  // 1. Initial Loading Splash Screen
+  // ---------------- AUTHENTICATION ----------------
+
   if (flowState === 'splash') {
     return <SplashScreen onFinish={() => setFlowState('login')} />;
   }
 
-  // 2. Authentication Login Screen
   if (flowState === 'login') {
     return <LoginScreen onLoginSuccess={() => setFlowState('app')} />;
   }
+
+  // ---------------- ROUTES ----------------
 
   const renderCurrentRoute = () => {
     switch (currentRoute) {
@@ -73,6 +182,7 @@ export default function AppScreen() {
             onNavigateToDocs={() => setCurrentRoute('docs')}
           />
         );
+
       case 'docs':
         return (
           <DocsPage
@@ -81,8 +191,10 @@ export default function AppScreen() {
             onNavigateToColis={() => setCurrentRoute('colis')}
           />
         );
+
       case 'locations':
         return <LocationsPage />;
+
       case 'home':
         return (
           <HomeScreen
@@ -103,6 +215,7 @@ export default function AppScreen() {
             }}
           />
         );
+
       case 'clients':
         return (
           <ClientsPage
@@ -113,6 +226,7 @@ export default function AppScreen() {
             onDeleteClient={handleDeleteClient}
           />
         );
+
       case 'settings':
       case 'more':
         return (
@@ -124,16 +238,19 @@ export default function AppScreen() {
             clientsList={clientsList}
             onUpdateColisList={setColisList}
             onClearAllData={() => {
+              // This only clears local Colis data.
+              // It does not delete MongoDB clients.
               setColisList([]);
-              setClientsList([]);
             }}
             onRestoreDefaultData={() => {
+              // Restore Colis mock data only.
+              // MongoDB clients remain unchanged.
               setColisList(INITIAL_COLIS);
-              setClientsList(INITIAL_CLIENTS);
             }}
             onLogout={() => setFlowState('login')}
           />
         );
+
       default:
         return (
           <HomeScreen
@@ -160,8 +277,7 @@ export default function AppScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor="#0B3E96" />
-      
-      {/* Top Application Header */}
+
       {currentRoute !== 'home' && currentRoute !== 'docs' && (
         <Header
           direction={direction}
@@ -170,12 +286,10 @@ export default function AppScreen() {
         />
       )}
 
-      {/* Route Content View */}
       <View style={styles.content}>
         {renderCurrentRoute()}
       </View>
 
-      {/* Bottom Navigation */}
       <Footer
         activeTab={currentRoute}
         onTabChange={(tab) => setCurrentRoute(tab)}
