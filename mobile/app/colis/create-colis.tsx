@@ -10,7 +10,8 @@ import {
   Alert,
   Image,
 } from 'react-native';
-import { Plus, X, ArrowLeft, ArrowRight, Check } from 'lucide-react-native';
+import { Plus, X, ArrowLeft, ArrowRight, Check, Home, Package, User, MapPin } from 'lucide-react-native';
+import { FranceFlagBadge, MoroccoFlagBadge } from '../../components/common/Icons';
 
 export interface Colis {
   id: string;
@@ -223,9 +224,23 @@ export default function CreateColis({
           <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
             {/* Direction badge */}
             <View style={styles.directionBadge}>
-              <Text style={styles.directionBadgeText}>
-                {direction === 'FR_TO_MA' ? '🇫🇷 France ➔ 🇲🇦 Maroc' : '🇲🇦 Maroc ➔ 🇫🇷 France'}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                {direction === 'FR_TO_MA' ? (
+                  <>
+                    <FranceFlagBadge size={16} />
+                    <Text style={[styles.directionBadgeText, { marginHorizontal: 6 }]}>France ➔</Text>
+                    <MoroccoFlagBadge size={16} />
+                    <Text style={[styles.directionBadgeText, { marginLeft: 6 }]}>Maroc</Text>
+                  </>
+                ) : (
+                  <>
+                    <MoroccoFlagBadge size={16} />
+                    <Text style={[styles.directionBadgeText, { marginHorizontal: 6 }]}>Maroc ➔</Text>
+                    <FranceFlagBadge size={16} />
+                    <Text style={[styles.directionBadgeText, { marginLeft: 6 }]}>France</Text>
+                  </>
+                )}
+              </View>
             </View>
 
             {/* STEP 1: SENDER DETAILS */}
@@ -281,13 +296,14 @@ export default function CreateColis({
                     >
                       {isADomicile === true && <View style={styles.radioInnerCircle} />}
                     </View>
+                    <Home size={14} color={isADomicile === true ? '#15803d' : '#64748b'} strokeWidth={2.2} style={{ marginRight: 6 }} />
                     <Text
                       style={[
                         styles.radioText,
                         isADomicile === true && styles.radioTextSelectedSuccess,
                       ]}
                     >
-                      🏠 À domicile
+                      À domicile
                     </Text>
                   </TouchableOpacity>
 
@@ -307,13 +323,14 @@ export default function CreateColis({
                     >
                       {isADomicile === false && <View style={styles.radioInnerCircle} />}
                     </View>
+                    <Package size={14} color={isADomicile === false ? '#15803d' : '#64748b'} strokeWidth={2.2} style={{ marginRight: 6 }} />
                     <Text
                       style={[
                         styles.radioText,
                         isADomicile === false && styles.radioTextSelectedSuccess,
                       ]}
                     >
-                      📦 Point relais
+                      Point relais
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -323,7 +340,8 @@ export default function CreateColis({
                   onPress={handleNextStep1}
                   activeOpacity={0.85}
                 >
-                  <Text style={styles.nextStepText}>Suivant : Destinataire ➔</Text>
+                  <Text style={styles.nextStepText}>Suivant : Destinataire</Text>
+                  <ArrowRight size={16} color="#FFFFFF" strokeWidth={2.5} style={{ marginLeft: 6 }} />
                 </TouchableOpacity>
               </View>
             )}
@@ -433,7 +451,8 @@ export default function CreateColis({
                     onPress={handleNextStep2}
                     activeOpacity={0.85}
                   >
-                    <Text style={styles.nextStepText}>Suivant : Infos colis ➔</Text>
+                    <Text style={styles.nextStepText}>Suivant : Infos colis</Text>
+                    <ArrowRight size={16} color="#FFFFFF" strokeWidth={2.5} style={{ marginLeft: 6 }} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -447,9 +466,13 @@ export default function CreateColis({
 
                 {/* Summary badge of sender -> receiver */}
                 <View style={styles.summaryBox}>
-                  <Text style={styles.summaryText}>
-                    👤 {senderName} ({fromCity}) ➔ 📍 {receiverName} ({toCity})
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <User size={13} color="#1d4ed8" strokeWidth={2.2} style={{ marginRight: 4 }} />
+                    <Text style={styles.summaryText}>{senderName} ({fromCity})</Text>
+                    <ArrowRight size={12} color="#94a3b8" strokeWidth={2.2} style={{ marginHorizontal: 6 }} />
+                    <MapPin size={13} color="#1d4ed8" strokeWidth={2.2} style={{ marginRight: 4 }} />
+                    <Text style={styles.summaryText}>{receiverName} ({toCity})</Text>
+                  </View>
                 </View>
 
                 {/* Colis Image Selector */}
@@ -859,6 +882,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2563eb',
     borderRadius: 12,
     paddingVertical: 13,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#2563eb',
