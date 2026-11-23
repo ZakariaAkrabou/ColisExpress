@@ -1,3 +1,4 @@
+//colis_page.tsx
 import React, { useState } from 'react';
 import {
   View,
@@ -9,12 +10,30 @@ import {
   Image,
   Linking,
 } from 'react-native';
-import { Package, Plus, Search, MapPin, Phone, FileText } from 'lucide-react-native';
+import {
+  Package,
+  Plus,
+  Search,
+  MapPin,
+  Phone,
+  FileText,
+  Clock,
+  Truck,
+  CheckCircle2,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  X,
+  MessageCircle,
+  Eye,
+  Pencil,
+} from 'lucide-react-native';
 
 import CreateColis, { Colis } from './create-colis';
 import ViewColis from './view_colis';
 import UpdateColis from './update_colis';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FranceFlagBadge, MoroccoFlagBadge } from '../../components/common/Icons';
 
 export { Colis };
 
@@ -108,11 +127,22 @@ export default function ColisPage({
   const getStatusLabel = (status: Colis['status']) => {
     switch (status) {
       case 'pending':
-        return '⏳ En attente';
+        return 'En attente';
       case 'in_transit':
-        return '🚚 En transit';
+        return 'En transit';
       case 'delivered':
-        return '✅ Livré';
+        return 'Livré';
+    }
+  };
+
+  const renderStatusIcon = (status: Colis['status'], size = 11) => {
+    switch (status) {
+      case 'pending':
+        return <Clock size={size} color="#b45309" strokeWidth={2.4} style={{ marginRight: 3 }} />;
+      case 'in_transit':
+        return <Truck size={size} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 3 }} />;
+      case 'delivered':
+        return <CheckCircle2 size={size} color="#15803d" strokeWidth={2.4} style={{ marginRight: 3 }} />;
     }
   };
 
@@ -125,9 +155,26 @@ export default function ColisPage({
             <Package size={22} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
             <Text style={styles.title}>Gestion des Colis</Text>
           </View>
-          <Text style={styles.subtitle}>
-            {direction === 'FR_TO_MA' ? '🇫🇷 France ➔ 🇲🇦 Maroc' : '🇲🇦 Maroc ➔ 🇫🇷 France'} • {filteredColis.length} colis
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {direction === 'FR_TO_MA' ? (
+                <>
+                  <FranceFlagBadge size={14} />
+                  <Text style={[styles.subtitle, { marginHorizontal: 4 }]}>France ➔</Text>
+                  <MoroccoFlagBadge size={14} />
+                  <Text style={[styles.subtitle, { marginLeft: 4 }]}>Maroc</Text>
+                </>
+              ) : (
+                <>
+                  <MoroccoFlagBadge size={14} />
+                  <Text style={[styles.subtitle, { marginHorizontal: 4 }]}>Maroc ➔</Text>
+                  <FranceFlagBadge size={14} />
+                  <Text style={[styles.subtitle, { marginLeft: 4 }]}>France</Text>
+                </>
+              )}
+            </View>
+            <Text style={styles.subtitle}> • {filteredColis.length} colis</Text>
+          </View>
         </View>
 
         <TouchableOpacity
@@ -152,7 +199,7 @@ export default function ColisPage({
         />
         {search ? (
           <TouchableOpacity onPress={() => setSearch('')} style={styles.clearSearchBtn}>
-            <Text style={styles.clearSearch}>✕</Text>
+            <X size={14} color="#64748b" strokeWidth={2.4} />
           </TouchableOpacity>
         ) : null}
       </View>
@@ -179,7 +226,11 @@ export default function ColisPage({
                 ? `En transit (${colisList.filter((c) => c.status === 'in_transit').length})`
                 : `Livré (${colisList.filter((c) => c.status === 'delivered').length})`}
             </Text>
-            <Text style={styles.dropdownChevron}>{statusMenuVisible ? '▲' : '▼'}</Text>
+            {statusMenuVisible ? (
+              <ChevronUp size={14} color="#64748b" strokeWidth={2.2} />
+            ) : (
+              <ChevronDown size={14} color="#64748b" strokeWidth={2.2} />
+            )}
           </TouchableOpacity>
           {statusMenuVisible && (
             <View style={styles.dropdownMenu}>
@@ -209,7 +260,7 @@ export default function ColisPage({
                     <Text style={[styles.dropdownItemText, isActive && styles.dropdownItemTextActive]}>
                       {label} ({count})
                     </Text>
-                    {isActive && <Text style={styles.dropdownCheck}>✓</Text>}
+                    {isActive && <Check size={14} color="#2563eb" strokeWidth={2.5} />}
                   </TouchableOpacity>
                 );
               })}
@@ -231,7 +282,11 @@ export default function ColisPage({
             <Text style={styles.dropdownToggleText} numberOfLines={1}>
               {cityFilter === 'all' ? 'Toutes les villes' : cityFilter}
             </Text>
-            <Text style={styles.dropdownChevron}>{cityMenuVisible ? '▲' : '▼'}</Text>
+            {cityMenuVisible ? (
+              <ChevronUp size={14} color="#64748b" strokeWidth={2.2} />
+            ) : (
+              <ChevronDown size={14} color="#64748b" strokeWidth={2.2} />
+            )}
           </TouchableOpacity>
           {cityMenuVisible && (
             <View style={styles.dropdownMenu}>
@@ -249,7 +304,7 @@ export default function ColisPage({
                     <Text style={[styles.dropdownItemText, isActive && styles.dropdownItemTextActive]}>
                       {city === 'all' ? 'Toutes les villes' : city}
                     </Text>
-                    {isActive && <Text style={styles.dropdownCheck}>✓</Text>}
+                    {isActive && <Check size={14} color="#2563eb" strokeWidth={2.5} />}
                   </TouchableOpacity>
                 );
               })}
@@ -293,11 +348,12 @@ export default function ColisPage({
                       }}
                       activeOpacity={0.7}
                     >
-                      <Text style={styles.whatsappIcon}>💬</Text>
+                      <MessageCircle size={15} color="#FFFFFF" strokeWidth={2.4} />
                     </TouchableOpacity>
                     <View style={styles.cardImageOverlay}>
                       <Text style={styles.trackingIdTag}>{item.id}</Text>
-                      <View style={[styles.statusBadge, getStatusStyle(item.status)]}>
+                      <View style={[styles.statusBadge, getStatusStyle(item.status), { flexDirection: 'row', alignItems: 'center' }]}>
+                        {renderStatusIcon(item.status, 10)}
                         <Text style={[styles.statusText, getStatusTextStyle(item.status)]}>
                           {getStatusLabel(item.status)}
                         </Text>
@@ -309,9 +365,18 @@ export default function ColisPage({
                   <View style={styles.cardContent}>
                     {/* Payment tag */}
                     <View style={styles.paymentTagRow}>
-                      <View style={[styles.paidChip, isPaid ? styles.paidChipSuccess : styles.paidChipDanger]}>
+                      <View style={[styles.paidChip, isPaid ? styles.paidChipSuccess : styles.paidChipDanger, { flexDirection: 'row', alignItems: 'center' }]}>
+                        <View
+                          style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: 3,
+                            backgroundColor: isPaid ? '#15803d' : '#b91c1c',
+                            marginRight: 4,
+                          }}
+                        />
                         <Text style={[styles.paidChipText, isPaid ? styles.paidTextSuccess : styles.paidTextDanger]}>
-                          {isPaid ? '🟢 Payé' : '🔴 Non Payé'}
+                          {isPaid ? 'Payé' : 'Non Payé'}
                         </Text>
                       </View>
                     </View>
@@ -322,8 +387,14 @@ export default function ColisPage({
                       <View style={styles.personColumn}>
                         <Text style={styles.personColumnLabel}>Expéditeur</Text>
                         <Text style={styles.personName} numberOfLines={1}>{item.senderName}</Text>
-                        <Text style={styles.personDetail} numberOfLines={1}>📍 {item.fromCity}</Text>
-                        <Text style={styles.personDetail} numberOfLines={1}>📞 {item.senderPhone}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 1 }}>
+                          <MapPin size={9} color="#64748b" strokeWidth={2} style={{ marginRight: 3 }} />
+                          <Text style={styles.personDetail} numberOfLines={1}>{item.fromCity}</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 1 }}>
+                          <Phone size={9} color="#64748b" strokeWidth={2} style={{ marginRight: 3 }} />
+                          <Text style={styles.personDetail} numberOfLines={1}>{item.senderPhone}</Text>
+                        </View>
                       </View>
                       {/* Divider */}
                       <View style={styles.personDivider} />
@@ -331,8 +402,14 @@ export default function ColisPage({
                       <View style={styles.personColumn}>
                         <Text style={styles.personColumnLabel}>Destinataire</Text>
                         <Text style={styles.personName} numberOfLines={1}>{item.receiverName}</Text>
-                        <Text style={styles.personDetail} numberOfLines={1}>📍 {item.toCity}</Text>
-                        <Text style={styles.personDetail} numberOfLines={1}>📞 {item.receiverPhone}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 1 }}>
+                          <MapPin size={9} color="#64748b" strokeWidth={2} style={{ marginRight: 3 }} />
+                          <Text style={styles.personDetail} numberOfLines={1}>{item.toCity}</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 1 }}>
+                          <Phone size={9} color="#64748b" strokeWidth={2} style={{ marginRight: 3 }} />
+                          <Text style={styles.personDetail} numberOfLines={1}>{item.receiverPhone}</Text>
+                        </View>
                       </View>
                     </View>
 
@@ -360,14 +437,16 @@ export default function ColisPage({
                         style={styles.viewActionBtn}
                         onPress={() => setViewColis(item)}
                       >
-                        <Text style={styles.viewActionText}>👁️ Détails</Text>
+                        <Eye size={12} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 4 }} />
+                        <Text style={styles.viewActionText}>Détails</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
                         style={styles.editActionBtn}
                         onPress={() => setEditColis(item)}
                       >
-                        <Text style={styles.editActionText}>✏️ Modifier</Text>
+                        <Pencil size={12} color="#d97706" strokeWidth={2.4} style={{ marginRight: 4 }} />
+                        <Text style={styles.editActionText}>Modifier</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -796,7 +875,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#eff6ff',
     paddingVertical: 6,
     borderRadius: 8,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#bfdbfe',
   },
@@ -810,7 +891,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fef3c7',
     paddingVertical: 6,
     borderRadius: 8,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#fde68a',
   },

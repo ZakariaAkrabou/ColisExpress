@@ -9,7 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MapPin, Plus, Search, Trash2, Edit3 } from 'lucide-react-native';
+import { MapPin, Plus, Search, Trash2, Edit3, X } from 'lucide-react-native';
 import { MoroccoFlagBadge, FranceFlagBadge } from '../../components/common/Icons';
 
 import AddLocationPage from './add_location';
@@ -136,7 +136,7 @@ export default function LocationsPage() {
         />
         {search ? (
           <TouchableOpacity onPress={() => setSearch('')}>
-            <Text style={styles.clearSearch}>✕</Text>
+            <X size={16} color="#94a3b8" strokeWidth={2.2} />
           </TouchableOpacity>
         ) : null}
       </View>

@@ -1,3 +1,4 @@
+//createClient.tsx
 import React, { useState } from 'react';
 import {
   View,
@@ -11,6 +12,7 @@ import {
   Platform,
   StatusBar,
 } from 'react-native';
+
 import {
   User,
   Phone,
@@ -24,15 +26,17 @@ import { MoroccoFlagBadge, FranceFlagBadge } from '../../components/common/Icons
 
 export interface CreateClientProps {
   onBack?: () => void;
-  onClientCreated?: (newClient: Client) => void;
+  onClientCreated?: (newClient: Client) => Promise<boolean>;
   existingClients?: Client[];
 }
 
 export default function CreateClientScreen({
+
   onBack,
   onClientCreated,
   existingClients = [],
 }: CreateClientProps) {
+  const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
   const [countryCode, setCountryCode] = useState<'+212' | '+33'>('+212');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -66,30 +70,36 @@ export default function CreateClientScreen({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (saving) return;
+
     if (!validate()) {
       Alert.alert('Erreur', 'Veuillez corriger les erreurs dans le formulaire');
       return;
     }
 
-    const nextIdNumber = existingClients.length + 1;
-    const formattedId = `CL-${String(nextIdNumber).padStart(3, '0')}`;
     const fullPhone = `${countryCode} ${phoneNumber.trim()}`;
 
+    // This ID is temporary. MongoDB generates the real ID.
     const newClient: Client = {
-      id: formattedId,
+      id: `temporary-${Date.now()}`,
       name: name.trim(),
       phone: fullPhone,
       city: city.trim(),
       totalShipments: 0,
-      createdAt: new Date().toLocaleDateString('fr-FR'),
+      createdAt: new Date().toISOString(),
     };
 
-    if (onClientCreated) {
-      onClientCreated(newClient);
-    } else {
-      Alert.alert('Succès', `Le client ${newClient.name} a été enregistré avec succès !`);
-      onBack?.();
+    if (!onClientCreated) {
+      Alert.alert('Erreur', 'Le service d’enregistrement est indisponible.');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await onClientCreated(newClient);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -263,10 +273,13 @@ export default function CreateClientScreen({
         <TouchableOpacity
           style={styles.submitButton}
           onPress={handleSave}
+          disabled={saving}
           activeOpacity={0.88}
         >
           <UserPlus size={18} color="#FFFFFF" strokeWidth={2.5} style={{ marginRight: 8 }} />
-          <Text style={styles.submitButtonText}>Enregistrer le client</Text>
+          <Text style={styles.submitButtonText}>
+            {saving ? 'Enregistrement...' : 'Enregistrer le client'}
+          </Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

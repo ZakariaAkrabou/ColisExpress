@@ -9,7 +9,26 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
-import { Package, Edit3, X, Printer, Share2, FileText } from 'lucide-react-native';
+import {
+  Package,
+  Edit3,
+  X,
+  Printer,
+  Share2,
+  FileText,
+  Clock,
+  Truck,
+  CheckCircle2,
+  Check,
+  CreditCard,
+  AlertCircle,
+  Home,
+  Zap,
+  MapPin,
+  User,
+  Phone,
+  Scale,
+} from 'lucide-react-native';
 import { Colis } from './create-colis';
 import {
   generateSingleColisPrintHTML,
@@ -80,11 +99,22 @@ export default function ViewColis({
   const getStatusLabel = (status: Colis['status']) => {
     switch (status) {
       case 'pending':
-        return '⏳ En attente';
+        return 'En attente';
       case 'in_transit':
-        return '🚚 En transit';
+        return 'En transit';
       case 'delivered':
-        return '✅ Livré';
+        return 'Livré';
+    }
+  };
+
+  const renderStatusIcon = (status: Colis['status'], size = 12, color?: string) => {
+    switch (status) {
+      case 'pending':
+        return <Clock size={size} color={color || '#b45309'} strokeWidth={2.4} style={{ marginRight: 4 }} />;
+      case 'in_transit':
+        return <Truck size={size} color={color || '#1d4ed8'} strokeWidth={2.4} style={{ marginRight: 4 }} />;
+      case 'delivered':
+        return <CheckCircle2 size={size} color={color || '#15803d'} strokeWidth={2.4} style={{ marginRight: 4 }} />;
     }
   };
 
@@ -122,12 +152,22 @@ export default function ViewColis({
               <View style={styles.imageOverlayGradient}>
                 <Text style={styles.imageOverlayTracking}>{colis.id}</Text>
                 <View style={styles.bannerBadgesGroup}>
-                  <View style={[styles.paidBadgeBanner, isPaid ? styles.paidBannerSuccess : styles.paidBannerDanger]}>
+                  <View style={[styles.paidBadgeBanner, isPaid ? styles.paidBannerSuccess : styles.paidBannerDanger, { flexDirection: 'row', alignItems: 'center' }]}>
+                    <View
+                      style={{
+                        width: 7,
+                        height: 7,
+                        borderRadius: 3.5,
+                        backgroundColor: isPaid ? '#15803d' : '#b91c1c',
+                        marginRight: 4,
+                      }}
+                    />
                     <Text style={[styles.paidBadgeBannerText, isPaid ? styles.paidBannerTextSuccess : styles.paidBannerTextDanger]}>
-                      {isPaid ? '🟢 Payé' : '🔴 Non Payé'}
+                      {isPaid ? 'Payé' : 'Non Payé'}
                     </Text>
                   </View>
-                  <View style={[styles.statusBadge, getStatusBadgeStyle(colis.status)]}>
+                  <View style={[styles.statusBadge, getStatusBadgeStyle(colis.status), { flexDirection: 'row', alignItems: 'center' }]}>
+                    {renderStatusIcon(colis.status, 11)}
                     <Text style={[styles.statusText, getStatusTextStyle(colis.status)]}>
                       {getStatusLabel(colis.status)}
                     </Text>
@@ -145,23 +185,36 @@ export default function ViewColis({
 
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Paiement</Text>
-                <View style={[styles.paidBadgeInline, isPaid ? styles.paidBadgeInlineSuccess : styles.paidBadgeInlineDanger]}>
+                <View style={[styles.paidBadgeInline, isPaid ? styles.paidBadgeInlineSuccess : styles.paidBadgeInlineDanger, { flexDirection: 'row', alignItems: 'center' }]}>
+                  {isPaid ? (
+                    <CreditCard size={12} color="#15803d" strokeWidth={2.4} style={{ marginRight: 4 }} />
+                  ) : (
+                    <AlertCircle size={12} color="#b91c1c" strokeWidth={2.4} style={{ marginRight: 4 }} />
+                  )}
                   <Text style={[styles.paidBadgeInlineText, isPaid ? styles.paidBadgeTextSuccess : styles.paidBadgeTextDanger]}>
-                    {isPaid ? '💳 Payé' : '⚠️ Non Payé'}
+                    {isPaid ? 'Payé' : 'Non Payé'}
                   </Text>
                 </View>
               </View>
 
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Mode de livraison</Text>
-                <Text style={styles.detailValue}>
-                  {colis.isADomicile !== false ? '🏠 À domicile' : '📦 Point relais'}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  {colis.isADomicile !== false ? (
+                    <Home size={14} color="#0f172a" strokeWidth={2.2} style={{ marginRight: 5 }} />
+                  ) : (
+                    <Package size={14} color="#0f172a" strokeWidth={2.2} style={{ marginRight: 5 }} />
+                  )}
+                  <Text style={styles.detailValue}>
+                    {colis.isADomicile !== false ? 'À domicile' : 'Point relais'}
+                  </Text>
+                </View>
               </View>
 
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Statut actuel</Text>
-                <View style={[styles.statusBadge, getStatusBadgeStyle(colis.status)]}>
+                <View style={[styles.statusBadge, getStatusBadgeStyle(colis.status), { flexDirection: 'row', alignItems: 'center' }]}>
+                  {renderStatusIcon(colis.status, 11)}
                   <Text style={[styles.statusText, getStatusTextStyle(colis.status)]}>
                     {getStatusLabel(colis.status)}
                   </Text>
@@ -177,43 +230,62 @@ export default function ViewColis({
             {/* Quick Status Update Options */}
             {onStatusChange && (
               <View style={styles.modalSection}>
-                <Text style={styles.sectionTitle}>⚡ Modifier le statut rapidement</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                  <Zap size={14} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
+                  <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Modifier le statut rapidement</Text>
+                </View>
                 <View style={styles.statusButtonsRow}>
-                  {(['pending', 'in_transit', 'delivered'] as const).map((st) => (
-                    <TouchableOpacity
-                      key={st}
-                      style={[
-                        styles.statusOptionBtn,
-                        colis.status === st && styles.statusOptionActive,
-                      ]}
-                      onPress={() => onStatusChange(colis.id, st)}
-                      activeOpacity={0.8}
-                    >
-                      <Text
+                  {(['pending', 'in_transit', 'delivered'] as const).map((st) => {
+                    const isActive = colis.status === st;
+                    const iconColor = isActive ? '#FFFFFF' : st === 'pending' ? '#b45309' : st === 'in_transit' ? '#1d4ed8' : '#15803d';
+                    const label = st === 'pending' ? 'Attente' : st === 'in_transit' ? 'Transit' : 'Livré';
+                    return (
+                      <TouchableOpacity
+                        key={st}
                         style={[
-                          styles.statusOptionText,
-                          colis.status === st && styles.statusOptionActiveText,
+                          styles.statusOptionBtn,
+                          isActive && styles.statusOptionActive,
+                          { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
                         ]}
+                        onPress={() => onStatusChange(colis.id, st)}
+                        activeOpacity={0.8}
                       >
-                        {st === 'pending' ? '⏳ Attente' : st === 'in_transit' ? '🚚 Transit' : '✅ Livré'}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                        {renderStatusIcon(st, 12, iconColor)}
+                        <Text
+                          style={[
+                            styles.statusOptionText,
+                            isActive && styles.statusOptionActiveText,
+                          ]}
+                        >
+                          {label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               </View>
             )}
 
             {/* Route & Contact Section */}
             <View style={styles.modalSection}>
-              <Text style={styles.sectionTitle}>🗺️ Trajet & Coordonnées</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                <MapPin size={14} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
+                <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Trajet & Coordonnées</Text>
+              </View>
 
               <View style={styles.routeStepCard}>
                 <View style={[styles.stepDot, { backgroundColor: '#16a34a' }]} />
                 <View style={styles.stepContent}>
                   <Text style={styles.stepTitle}>EXPÉDITEUR / DÉPART</Text>
                   <Text style={styles.stepCity}>{colis.fromCity}</Text>
-                  <Text style={styles.stepSub}>👤 {colis.senderName}</Text>
-                  <Text style={styles.stepSub}>📞 {colis.senderPhone}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                    <User size={11} color="#64748b" strokeWidth={2} style={{ marginRight: 4 }} />
+                    <Text style={styles.stepSub}>{colis.senderName}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                    <Phone size={11} color="#64748b" strokeWidth={2} style={{ marginRight: 4 }} />
+                    <Text style={styles.stepSub}>{colis.senderPhone}</Text>
+                  </View>
                 </View>
               </View>
 
@@ -226,15 +298,24 @@ export default function ViewColis({
                 <View style={styles.stepContent}>
                   <Text style={styles.stepTitle}>DESTINATAIRE / ARRIVÉE</Text>
                   <Text style={styles.stepCity}>{colis.toCity}</Text>
-                  <Text style={styles.stepSub}>👤 {colis.receiverName}</Text>
-                  <Text style={styles.stepSub}>📞 {colis.receiverPhone}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                    <User size={11} color="#64748b" strokeWidth={2} style={{ marginRight: 4 }} />
+                    <Text style={styles.stepSub}>{colis.receiverName}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                    <Phone size={11} color="#64748b" strokeWidth={2} style={{ marginRight: 4 }} />
+                    <Text style={styles.stepSub}>{colis.receiverPhone}</Text>
+                  </View>
                 </View>
               </View>
             </View>
 
             {/* Specifications Section */}
             <View style={styles.modalSection}>
-              <Text style={styles.sectionTitle}>⚖️ Caractéristiques du colis</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                <Scale size={14} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
+                <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Caractéristiques du colis</Text>
+              </View>
               <View style={styles.specGrid}>
                 <View style={styles.specItem}>
                   <Text style={styles.specLabel}>Poids</Text>
@@ -258,7 +339,10 @@ export default function ViewColis({
 
             {/* Documents & Printing Section */}
             <View style={styles.modalSection}>
-              <Text style={styles.sectionTitle}>🖨️ Impression & Documents</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                <Printer size={14} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
+                <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Impression & Documents</Text>
+              </View>
               
               <View style={styles.printButtonsRow}>
                 {/* Print Ticket Button */}

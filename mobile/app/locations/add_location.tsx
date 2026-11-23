@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { X } from 'lucide-react-native';
 
 import type { LocationCountry, LocationItem } from './locations_page';
 
@@ -42,7 +43,7 @@ export default function AddLocationPage({ onClose, onSave }: AddLocationPageProp
         <View style={styles.header}>
           <Text style={styles.title}>Add Location</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeText}>✕</Text>
+            <X size={18} color="#64748b" strokeWidth={2.4} />
           </TouchableOpacity>
         </View>
 
