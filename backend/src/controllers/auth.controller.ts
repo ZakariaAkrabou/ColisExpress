@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
 
 export class AuthController {
+
   static async login(req: Request, res: Response): Promise<void> {
     try {
       const { email, password } = req.body;
@@ -17,12 +18,32 @@ export class AuthController {
         ...result
       });
     } catch (error: any) {
-     
+
       if (error.message === 'email or password is incorrect' || error.message === 'Account is disabled') {
         res.status(401).json({ message: error.message });
         return;
       }
       console.error('Login Error:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+
+  static async logout(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).user?.id;
+
+      if (!userId) {
+        res.status(401).json({ message: 'Unauthorized' });
+        return;
+      }
+
+      await AuthService.logout(userId);
+
+      res.status(200).json({
+        message: 'Logout successful',
+      });
+    } catch (error) {
+      console.error('Logout Error:', error);
       res.status(500).json({ message: 'Internal server error' });
     }
   }
