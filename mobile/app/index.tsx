@@ -276,7 +276,8 @@ export default function AppScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="light-content" backgroundColor="#0B3E96" />
+
+      <StatusBar barStyle="light-content" />
 
       {currentRoute !== 'home' && currentRoute !== 'docs' && (
         <Header

@@ -44,7 +44,9 @@ import { MoroccoFlagBadge, FranceFlagBadge } from '../../components/common/Icons
 import { Colis } from '../colis/colis_page';
 import { Client } from '../client/clientPage';
 import { INITIAL_COLIS, INITIAL_CLIENTS } from '../../services/mockData';
-
+import { logout } from '../../features/auth/auth.api';
+import { storage } from '../../services/storage';
+import * as SecureStore from 'expo-secure-store';
 export interface UserProfile {
   name: string;
   email: string;
@@ -186,6 +188,7 @@ export default function SettingsPage({
   const [showNewPass, setShowNewPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Export Modal States
   const [showExportModal, setShowExportModal] = useState(false);
@@ -459,24 +462,59 @@ export default function SettingsPage({
     );
   };
 
-  // --- LOGOUT HANDLER ---
+
+  const executeLogout = async () => {
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
+    try {
+      console.log('[SettingsPage] Début de la déconnexion...');
+      const token = await storage.getToken();
+      console.log('[SettingsPage] Token récupéré pour déconnexion:', token ? `${token.substring(0, 15)}...` : 'aucun');
+
+      await logout(token || undefined);
+      console.log('[SettingsPage] Déconnexion API réussie');
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        (error instanceof Error
+          ? error.message
+          : 'Une erreur est survenue lors de la déconnexion.');
+      console.warn('[SettingsPage] Erreur API logout:', message);
+    } finally {
+      try {
+        await storage.removeToken();
+      } catch (storageError) {
+        console.warn('Error clearing auth store:', storageError);
+      }
+      setIsLoggingOut(false);
+      onLogout?.();
+    }
+  };
+
   const handleLogout = () => {
-    Alert.alert(
-      'Déconnexion',
-      'Êtes-vous sûr de vouloir vous déconnecter de votre session opérateur ?',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Se déconnecter',
-          style: 'destructive',
-          onPress: () => {
-            if (onLogout) {
-              onLogout();
-            }
+    if (Platform.OS === 'web') {
+      const confirmed =
+        typeof window !== 'undefined' && typeof window.confirm === 'function'
+          ? window.confirm('Êtes-vous sûr de vouloir vous déconnecter de votre session opérateur ?')
+          : true;
+      if (confirmed) {
+        executeLogout();
+      }
+    } else {
+      Alert.alert(
+        'Déconnexion',
+        'Êtes-vous sûr de vouloir vous déconnecter de votre session opérateur ?',
+        [
+          { text: 'Annuler', style: 'cancel' },
+          {
+            text: 'Se déconnecter',
+            style: 'destructive',
+            onPress: executeLogout,
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   // Password strength helper
@@ -491,7 +529,7 @@ export default function SettingsPage({
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1d4ed8" />
+      <StatusBar barStyle="light-content" />
 
       {/* --- Top Header (Home Theme Style) --- */}
       <View style={styles.headerWrapper}>
@@ -827,9 +865,16 @@ export default function SettingsPage({
           style={styles.logoutBtn}
           onPress={handleLogout}
           activeOpacity={0.8}
+          disabled={isLoggingOut}
         >
-          <LogOut size={18} color="#dc2626" strokeWidth={2.2} style={{ marginRight: 8 }} />
-          <Text style={styles.logoutBtnText}>Se déconnecter</Text>
+          {isLoggingOut ? (
+            <ActivityIndicator color="#dc2626" size="small" />
+          ) : (
+            <>
+              <LogOut size={18} color="#dc2626" strokeWidth={2.2} style={{ marginRight: 8 }} />
+              <Text style={styles.logoutBtnText}>Se déconnecter</Text>
+            </>
+          )}
         </TouchableOpacity>
       </ScrollView>
 

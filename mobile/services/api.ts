@@ -1,14 +1,30 @@
+import axios from "axios";
+import { storage } from "./storage";
 
-import axios from 'axios';
-
-export const API_BASE_URL = 'http://192.168.1.122:5000/api';
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
+export const api = axios.create({
+  baseURL: process.env.EXPO_PUBLIC_API_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
-  timeout: 15000,
 });
 
-export default api;
+api.interceptors.request.use(
+  async (config) => {
+    try {
+      const token = await storage.getToken();
+      if (token) {
+        if (config.headers) {
+          if (typeof (config.headers as any).set === "function") {
+            (config.headers as any).set("Authorization", `Bearer ${token}`);
+          } else {
+            (config.headers as any)["Authorization"] = `Bearer ${token}`;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("api interceptor warning:", err);
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
