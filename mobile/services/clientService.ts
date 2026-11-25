@@ -1,6 +1,6 @@
 
-import api from './api';
-import type { Client } from '../app/client/clientPage';
+import {api} from './api';
+import type { Client } from '../types/clients.types';
 
 export interface ClientInput {
   name: string;

@@ -1,3 +1,4 @@
+//updateClient.tsx
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -29,7 +30,7 @@ import {
   User,
   AlertTriangle,
 } from 'lucide-react-native';
-import { Client } from './clientPage';
+import type { Client } from '../../types/clients.types';
 import { Colis } from '../colis/colis_page';
 import { MoroccoFlagBadge, FranceFlagBadge } from '../../components/common/Icons';
 

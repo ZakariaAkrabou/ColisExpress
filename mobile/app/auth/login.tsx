@@ -52,7 +52,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         await SecureStore.deleteItemAsync('remember_me');
       }
 
-      console.log('Login successful');
 
       // Navigate to dashboard
       if (onLoginSuccess) {

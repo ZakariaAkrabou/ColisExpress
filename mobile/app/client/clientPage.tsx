@@ -21,42 +21,29 @@ import {
   MapPin,
 } from 'lucide-react-native';
 import { Colis } from '../colis/colis_page';
-import ClientDetailModal from './clientDetail';
+import { Client, ClientsPageProps } from '../../types/clients.types';
+import { useClients } from '../../hooks/useClients';
+import ClientDetailModal from './updateClient';
 import CreateClientScreen from './createClient';
 
-export interface Client {
-  id: string;
-  name: string;
-  phone: string;
-  city: string;
-  totalShipments: number;
-  createdAt?: string;
-}
 
-export interface ClientsPageProps {
-  clientsList: Client[];
-  colisList?: Colis[];
-  onAddClient?: (client: Client) => Promise<boolean>;
-  onUpdateClient?: (updatedClient: Client) => Promise<boolean>;
-  onDeleteClient?: (clientId: string) => Promise<boolean>;
-  onOpenCreateClient?: () => void;
-  onClientPress?: (client: Client) => void;
-}
+
 
 export default function ClientsPage({
-  clientsList,
   colisList = [],
-  onAddClient,
-  onUpdateClient,
-  onDeleteClient,
   onOpenCreateClient,
   onClientPress,
+  onUpdateClient,
+  onDeleteClient,
+  onAddClient,
 }: ClientsPageProps) {
+  // UI now gets data from useClients hook
   const [search, setSearch] = useState('');
+  const { clients, loading, fetchClients, addClient, modifyClient, removeClient } = useClients();
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [isCreatingClient, setIsCreatingClient] = useState(false);
 
-  const filteredClients = clientsList.filter((client) => {
+  const filteredClients = clients.filter((client) => {
     const term = search.toLowerCase().trim();
     if (!term) return true;
     return (
@@ -81,42 +68,47 @@ export default function ClientsPage({
     }
   };
 
-const handleUpdate = async (updatedClient: Client): Promise<boolean> => {
-  const success = await onUpdateClient?.(updatedClient);
+  const handleUpdate = async (updatedClient: Client): Promise<boolean> => {
+  const { id, ...clientInput } = updatedClient;
+
+  const success = await modifyClient(id, clientInput);
 
   if (success) {
-    setSelectedClient(updatedClient);
+    setSelectedClient(null); // or keep the modal open if that's your intended behavior
   }
 
-  return success ?? false;
+  return success;
 };
 
 const handleDelete = async (clientId: string): Promise<boolean> => {
-  const success = await onDeleteClient?.(clientId);
+  const success = await removeClient(clientId);
 
   if (success) {
     setSelectedClient(null);
   }
 
-  return success ?? false;
+  return success;
 };
 
 
-if (isCreatingClient) {
-  return (
-    <CreateClientScreen
-      onBack={() => setIsCreatingClient(false)}
-      onClientCreated={async (newClient) => {
-        const success = await onAddClient?.(newClient);
+  if (isCreatingClient) {
+    return (
+      <CreateClientScreen
+        onBack={() => setIsCreatingClient(false)}
+        onClientCreated={async (newClient) => {
+  const { id: _id, ...clientInput } = newClient;
+  const success = await addClient(clientInput);
 
-        if (success) {
-          setIsCreatingClient(false);
-        }
-      }}
-      existingClients={clientsList}
-    />
-  );
-}
+  if (success) {
+    setIsCreatingClient(false);
+  }
+
+  return success;
+}}
+        existingClients={clients}
+      />
+    );
+  }
 
   return (
     <View style={styles.container} className="flex-1 bg-slate-50">
@@ -223,7 +215,6 @@ if (isCreatingClient) {
         client={selectedClient}
         visible={!!selectedClient}
         onClose={() => setSelectedClient(null)}
-        colisList={colisList}
         onUpdateClient={handleUpdate}
         onDeleteClient={handleDelete}
       />

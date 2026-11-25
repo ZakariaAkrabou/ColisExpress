@@ -1,3 +1,4 @@
+//api.ts
 import axios from "axios";
 import { storage } from "./storage";
 
@@ -10,6 +11,7 @@ export const api = axios.create({
 
 api.interceptors.request.use(
   async (config) => {
+    console.log('[api] request interceptor start');
     try {
       const token = await storage.getToken();
       if (token) {
