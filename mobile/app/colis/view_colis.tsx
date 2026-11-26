@@ -10,6 +10,12 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+} from 'react-native-reanimated';
+
 import {
   Package,
   Edit3,
@@ -62,6 +68,64 @@ export default function ViewColis({
 }: ViewColisProps) {
   const [isPrinting, setIsPrinting] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+  const [isImageViewerVisible, setIsImageViewerVisible] = useState(false);
+  const scale = useSharedValue(1);
+  const savedScale = useSharedValue(1);
+
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+
+  // Pinch with two fingers to zoom
+  const pinchGesture = Gesture.Pinch()
+    .onStart(() => {
+      savedScale.value = scale.value;
+    })
+    .onUpdate((event) => {
+      scale.value = Math.min(
+        Math.max(savedScale.value * event.scale, 1),
+        4
+      );
+
+      if (scale.value === 1) {
+        translateX.value = 0;
+        translateY.value = 0;
+      }
+    })
+    .onEnd(() => {
+      savedScale.value = scale.value;
+    });
+
+  // Drag the image when zoomed
+  const panGesture = Gesture.Pan()
+    .onUpdate((event) => {
+      if (scale.value > 1) {
+        translateX.value = event.translationX;
+        translateY.value = event.translationY;
+      }
+    });
+
+  // Allow pinch and drag together
+  const imageGesture = Gesture.Simultaneous(
+    pinchGesture,
+    panGesture
+  );
+
+  // Apply transformations to the image
+  const animatedImageStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
+  }));
+
+  const closeImageViewer = () => {
+    scale.value = 1;
+    savedScale.value = 1;
+    translateX.value = 0;
+    translateY.value = 0;
+    setIsImageViewerVisible(false);
+  };
 
   if (!colis) return null;
 
@@ -126,51 +190,121 @@ export default function ViewColis({
   const isPaid = colis.isPaid !== false;
 
   return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          {/* Modal Header */}
-          <View style={styles.modalHeader}>
-            <View style={styles.headerTitleContainer}>
-              <View style={styles.headerIconBadge}>
-                <Package size={18} color="#1d4ed8" strokeWidth={2.4} />
+    <>
+      <Modal
+        visible={visible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => {
+          if (isImageViewerVisible) {
+            closeImageViewer();
+          } else {
+            onClose();
+          }
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            {/* Modal Header */}
+            <View style={styles.modalHeader}>
+              <View style={styles.headerTitleContainer}>
+                <View style={styles.headerIconBadge}>
+                  <Package size={18} color="#1d4ed8" strokeWidth={2.4} />
+                </View>
+                <Text style={styles.modalTitle}>Détails du Colis</Text>
               </View>
-              <Text style={styles.modalTitle}>Détails du Colis</Text>
+              <TouchableOpacity style={styles.closeButton} onPress={onClose} activeOpacity={0.7}>
+                <X size={18} color="#64748b" />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose} activeOpacity={0.7}>
-              <X size={18} color="#64748b" />
-            </TouchableOpacity>
-          </View>
 
-          <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-            {/* Parcel Image Banner */}
-            <View style={styles.imageBannerContainer}>
-              <Image
-                source={{ uri: getColisImage(colis.image) }}
-                style={styles.imageBanner}
-              />
-              <View style={styles.imageOverlayGradient}>
-                <Text style={styles.imageOverlayTracking}>{colis.ncommand}</Text>
-                <View style={styles.bannerBadgesGroup}>
-                  <View style={[styles.paidBadgeBanner, isPaid ? styles.paidBannerSuccess : styles.paidBannerDanger, { flexDirection: 'row', alignItems: 'center' }]}>
-                    <View
-                      style={{
-                        width: 7,
-                        height: 7,
-                        borderRadius: 3.5,
-                        backgroundColor: isPaid ? '#15803d' : '#b91c1c',
-                        marginRight: 4,
-                      }}
-                    />
-                    <Text style={[styles.paidBadgeBannerText, isPaid ? styles.paidBannerTextSuccess : styles.paidBannerTextDanger]}>
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+
+
+              {/* Parcel Image Banner */}
+              <View style={styles.imageBannerContainer}>
+                <TouchableOpacity
+                  style={styles.imageBanner}
+                  activeOpacity={0.9}
+                  onPress={() => setIsImageViewerVisible(true)}
+                >
+                  <Image
+                    source={{ uri: getColisImage(colis.image) }}
+                    style={styles.imageBanner}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+
+                <View
+                  pointerEvents="none"
+                  style={styles.imageOverlayGradient}
+                >
+                  <Text style={styles.imageOverlayTracking}>
+                    {colis.ncommand || colis.id}
+                  </Text>
+
+                  <View style={styles.bannerBadgesGroup}>
+                    <View style={[styles.paidBadgeBanner, isPaid ? styles.paidBannerSuccess : styles.paidBannerDanger, { flexDirection: 'row', alignItems: 'center' }]}>
+                      <View
+                        style={{
+                          width: 7,
+                          height: 7,
+                          borderRadius: 3.5,
+                          backgroundColor: isPaid ? '#15803d' : '#b91c1c',
+                          marginRight: 4,
+                        }}
+                      />
+                      <Text style={[styles.paidBadgeBannerText, isPaid ? styles.paidBannerTextSuccess : styles.paidBannerTextDanger]}>
+                        {isPaid ? 'Payé' : 'Non Payé'}
+                      </Text>
+                    </View>
+                    <View style={[styles.statusBadge, getStatusBadgeStyle(colis.status), { flexDirection: 'row', alignItems: 'center' }]}>
+                      {renderStatusIcon(colis.status, 11)}
+                      <Text style={[styles.statusText, getStatusTextStyle(colis.status)]}>
+                        {getStatusLabel(colis.status)}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              {/* Primary Details Card */}
+              <View style={styles.modalSection}>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Numéro de suivi</Text>
+                  <Text style={styles.detailValueHighlight}>{colis.id}</Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Paiement</Text>
+                  <View style={[styles.paidBadgeInline, isPaid ? styles.paidBadgeInlineSuccess : styles.paidBadgeInlineDanger, { flexDirection: 'row', alignItems: 'center' }]}>
+                    {isPaid ? (
+                      <CreditCard size={12} color="#15803d" strokeWidth={2.4} style={{ marginRight: 4 }} />
+                    ) : (
+                      <AlertCircle size={12} color="#b91c1c" strokeWidth={2.4} style={{ marginRight: 4 }} />
+                    )}
+                    <Text style={[styles.paidBadgeInlineText, isPaid ? styles.paidBadgeTextSuccess : styles.paidBadgeTextDanger]}>
                       {isPaid ? 'Payé' : 'Non Payé'}
                     </Text>
                   </View>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Mode de livraison</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    {colis.isADomicile !== false ? (
+                      <Home size={14} color="#0f172a" strokeWidth={2.2} style={{ marginRight: 5 }} />
+                    ) : (
+                      <Package size={14} color="#0f172a" strokeWidth={2.2} style={{ marginRight: 5 }} />
+                    )}
+                    <Text style={styles.detailValue}>
+                      {colis.isADomicile !== false ? 'À domicile' : 'Point relais'}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Statut actuel</Text>
                   <View style={[styles.statusBadge, getStatusBadgeStyle(colis.status), { flexDirection: 'row', alignItems: 'center' }]}>
                     {renderStatusIcon(colis.status, 11)}
                     <Text style={[styles.statusText, getStatusTextStyle(colis.status)]}>
@@ -178,264 +312,241 @@ export default function ViewColis({
                     </Text>
                   </View>
                 </View>
-              </View>
-            </View>
 
-            {/* Primary Details Card */}
-            <View style={styles.modalSection}>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Numéro de suivi</Text>
-                <Text style={styles.detailValueHighlight}>{colis.id}</Text>
-              </View>
-
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Paiement</Text>
-                <View style={[styles.paidBadgeInline, isPaid ? styles.paidBadgeInlineSuccess : styles.paidBadgeInlineDanger, { flexDirection: 'row', alignItems: 'center' }]}>
-                  {isPaid ? (
-                    <CreditCard size={12} color="#15803d" strokeWidth={2.4} style={{ marginRight: 4 }} />
-                  ) : (
-                    <AlertCircle size={12} color="#b91c1c" strokeWidth={2.4} style={{ marginRight: 4 }} />
-                  )}
-                  <Text style={[styles.paidBadgeInlineText, isPaid ? styles.paidBadgeTextSuccess : styles.paidBadgeTextDanger]}>
-                    {isPaid ? 'Payé' : 'Non Payé'}
-                  </Text>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Date d'enregistrement</Text>
+                  <Text style={styles.detailValue}>{colis.date}</Text>
                 </View>
               </View>
 
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Mode de livraison</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  {colis.isADomicile !== false ? (
-                    <Home size={14} color="#0f172a" strokeWidth={2.2} style={{ marginRight: 5 }} />
-                  ) : (
-                    <Package size={14} color="#0f172a" strokeWidth={2.2} style={{ marginRight: 5 }} />
-                  )}
-                  <Text style={styles.detailValue}>
-                    {colis.isADomicile !== false ? 'À domicile' : 'Point relais'}
-                  </Text>
+              {/* Quick Status Update Options */}
+              {onStatusChange && (
+                <View style={styles.modalSection}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                    <Zap size={14} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
+                    <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Modifier le statut rapidement</Text>
+                  </View>
+                  <View style={styles.statusButtonsRow}>
+                    {(['pending', 'in_transit', 'delivered'] as const).map((st) => {
+                      const isActive = colis.status === st;
+                      const iconColor = isActive ? '#FFFFFF' : st === 'pending' ? '#b45309' : st === 'in_transit' ? '#1d4ed8' : '#15803d';
+                      const label = st === 'pending' ? 'Attente' : st === 'in_transit' ? 'Transit' : 'Livré';
+                      return (
+                        <TouchableOpacity
+                          key={st}
+                          style={[
+                            styles.statusOptionBtn,
+                            isActive && styles.statusOptionActive,
+                            { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+                          ]}
+                          onPress={() => onStatusChange(colis.id, st)}
+                          activeOpacity={0.8}
+                        >
+                          {renderStatusIcon(st, 12, iconColor)}
+                          <Text
+                            style={[
+                              styles.statusOptionText,
+                              isActive && styles.statusOptionActiveText,
+                            ]}
+                          >
+                            {label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
                 </View>
-              </View>
+              )}
 
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Statut actuel</Text>
-                <View style={[styles.statusBadge, getStatusBadgeStyle(colis.status), { flexDirection: 'row', alignItems: 'center' }]}>
-                  {renderStatusIcon(colis.status, 11)}
-                  <Text style={[styles.statusText, getStatusTextStyle(colis.status)]}>
-                    {getStatusLabel(colis.status)}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Date d'enregistrement</Text>
-                <Text style={styles.detailValue}>{colis.date}</Text>
-              </View>
-            </View>
-
-            {/* Quick Status Update Options */}
-            {onStatusChange && (
+              {/* Route & Contact Section */}
               <View style={styles.modalSection}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                  <Zap size={14} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
-                  <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Modifier le statut rapidement</Text>
+                  <MapPin size={14} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
+                  <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Trajet & Coordonnées</Text>
                 </View>
-                <View style={styles.statusButtonsRow}>
-                  {(['pending', 'in_transit', 'delivered'] as const).map((st) => {
-                    const isActive = colis.status === st;
-                    const iconColor = isActive ? '#FFFFFF' : st === 'pending' ? '#b45309' : st === 'in_transit' ? '#1d4ed8' : '#15803d';
-                    const label = st === 'pending' ? 'Attente' : st === 'in_transit' ? 'Transit' : 'Livré';
-                    return (
-                      <TouchableOpacity
-                        key={st}
-                        style={[
-                          styles.statusOptionBtn,
-                          isActive && styles.statusOptionActive,
-                          { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-                        ]}
-                        onPress={() => onStatusChange(colis.id, st)}
-                        activeOpacity={0.8}
-                      >
-                        {renderStatusIcon(st, 12, iconColor)}
-                        <Text
-                          style={[
-                            styles.statusOptionText,
-                            isActive && styles.statusOptionActiveText,
-                          ]}
-                        >
-                          {label}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-            )}
 
-            {/* Route & Contact Section */}
-            <View style={styles.modalSection}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                <MapPin size={14} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
-                <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Trajet & Coordonnées</Text>
-              </View>
-
-              <View style={styles.routeStepCard}>
-                <View style={[styles.stepDot, { backgroundColor: '#16a34a' }]} />
-                <View style={styles.stepContent}>
-                  <Text style={styles.stepTitle}>EXPÉDITEUR / DÉPART</Text>
-                  <Text style={styles.stepCity}>{colis.fromCity}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-                    <User size={11} color="#64748b" strokeWidth={2} style={{ marginRight: 4 }} />
-                    <Text style={styles.stepSub}>{colis.senderName}</Text>
+                <View style={styles.routeStepCard}>
+                  <View style={[styles.stepDot, { backgroundColor: '#16a34a' }]} />
+                  <View style={styles.stepContent}>
+                    <Text style={styles.stepTitle}>EXPÉDITEUR / DÉPART</Text>
+                    <Text style={styles.stepCity}>{colis.fromCity}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                      <User size={11} color="#64748b" strokeWidth={2} style={{ marginRight: 4 }} />
+                      <Text style={styles.stepSub}>{colis.senderName}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                      <Phone size={11} color="#64748b" strokeWidth={2} style={{ marginRight: 4 }} />
+                      <Text style={styles.stepSub}>{colis.senderPhone}</Text>
+                    </View>
                   </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-                    <Phone size={11} color="#64748b" strokeWidth={2} style={{ marginRight: 4 }} />
-                    <Text style={styles.stepSub}>{colis.senderPhone}</Text>
+                </View>
+
+                <View style={styles.routeConnectorContainer}>
+                  <View style={styles.routeConnectorLine} />
+                </View>
+
+                <View style={styles.routeStepCard}>
+                  <View style={[styles.stepDot, { backgroundColor: '#2563eb' }]} />
+                  <View style={styles.stepContent}>
+                    <Text style={styles.stepTitle}>DESTINATAIRE / ARRIVÉE</Text>
+                    <Text style={styles.stepCity}>{colis.toCity}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                      <User size={11} color="#64748b" strokeWidth={2} style={{ marginRight: 4 }} />
+                      <Text style={styles.stepSub}>{colis.receiverName}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                      <Phone size={11} color="#64748b" strokeWidth={2} style={{ marginRight: 4 }} />
+                      <Text style={styles.stepSub}>{colis.receiverPhone}</Text>
+                    </View>
                   </View>
                 </View>
               </View>
 
-              <View style={styles.routeConnectorContainer}>
-                <View style={styles.routeConnectorLine} />
-              </View>
-
-              <View style={styles.routeStepCard}>
-                <View style={[styles.stepDot, { backgroundColor: '#2563eb' }]} />
-                <View style={styles.stepContent}>
-                  <Text style={styles.stepTitle}>DESTINATAIRE / ARRIVÉE</Text>
-                  <Text style={styles.stepCity}>{colis.toCity}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-                    <User size={11} color="#64748b" strokeWidth={2} style={{ marginRight: 4 }} />
-                    <Text style={styles.stepSub}>{colis.receiverName}</Text>
+              {/* Specifications Section */}
+              <View style={styles.modalSection}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                  <Scale size={14} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
+                  <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Caractéristiques du colis</Text>
+                </View>
+                <View style={styles.specGrid}>
+                  <View style={styles.specItem}>
+                    <Text style={styles.specLabel}>Poids</Text>
+                    <Text style={styles.specValue}>{colis.weight} kg</Text>
                   </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-                    <Phone size={11} color="#64748b" strokeWidth={2} style={{ marginRight: 4 }} />
-                    <Text style={styles.stepSub}>{colis.receiverPhone}</Text>
+                  <View style={styles.specItem}>
+                    <Text style={styles.specLabel}>Quantité</Text>
+                    <Text style={styles.specValue}>{colis.quantity || 1} pcs</Text>
+                  </View>
+                  <View style={styles.specItem}>
+                    <Text style={styles.specLabel}>Prix</Text>
+                    <Text style={styles.specValue}>{colis.price} MAD</Text>
                   </View>
                 </View>
-              </View>
-            </View>
 
-            {/* Specifications Section */}
-            <View style={styles.modalSection}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                <Scale size={14} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
-                <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Caractéristiques du colis</Text>
-              </View>
-              <View style={styles.specGrid}>
-                <View style={styles.specItem}>
-                  <Text style={styles.specLabel}>Poids</Text>
-                  <Text style={styles.specValue}>{colis.weight} kg</Text>
-                </View>
-                <View style={styles.specItem}>
-                  <Text style={styles.specLabel}>Quantité</Text>
-                  <Text style={styles.specValue}>{colis.quantity || 1} pcs</Text>
-                </View>
-                <View style={styles.specItem}>
-                  <Text style={styles.specLabel}>Prix</Text>
-                  <Text style={styles.specValue}>{colis.price} MAD</Text>
+                <View style={styles.descriptionBox}>
+                  <Text style={styles.specLabel}>Description du contenu</Text>
+                  <Text style={styles.descriptionText}>{colis.description || 'Aucune description'}</Text>
                 </View>
               </View>
 
-              <View style={styles.descriptionBox}>
-                <Text style={styles.specLabel}>Description du contenu</Text>
-                <Text style={styles.descriptionText}>{colis.description || 'Aucune description'}</Text>
-              </View>
-            </View>
+              {/* Documents & Printing Section */}
+              <View style={styles.modalSection}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                  <Printer size={14} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
+                  <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Impression & Documents</Text>
+                </View>
 
-            {/* Documents & Printing Section */}
-            <View style={styles.modalSection}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                <Printer size={14} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 6 }} />
-                <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Impression & Documents</Text>
-              </View>
-              
-              <View style={styles.printButtonsRow}>
-                {/* Print Ticket Button */}
-                <TouchableOpacity
-                  style={[styles.printPrimaryBtn, isPrinting && styles.printBtnDisabled]}
-                  onPress={handlePrint}
-                  disabled={isPrinting}
-                  activeOpacity={0.85}
-                >
-                  {isPrinting ? (
-                    <ActivityIndicator size="small" color="#ffffff" />
-                  ) : (
-                    <>
-                      <Printer size={16} color="#ffffff" style={{ marginRight: 6 }} />
-                      <Text style={styles.printPrimaryBtnText}>Imprimer le ticket</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-
-                {/* Share PDF Button */}
-                <TouchableOpacity
-                  style={[styles.printSecondaryBtn, isSharing && styles.printBtnDisabled]}
-                  onPress={handleShare}
-                  disabled={isSharing}
-                  activeOpacity={0.85}
-                >
-                  {isSharing ? (
-                    <ActivityIndicator size="small" color="#1d4ed8" />
-                  ) : (
-                    <>
-                      <Share2 size={15} color="#1d4ed8" style={{ marginRight: 6 }} />
-                      <Text style={styles.printSecondaryBtnText}>PDF</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              </View>
-
-              {/* Shortcut to Docs by City */}
-              {onOpenDocs && (
-                <TouchableOpacity
-                  style={styles.openDocsBtn}
-                  onPress={() => {
-                    onClose();
-                    onOpenDocs(colis.fromCity);
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <FileText size={15} color="#475569" style={{ marginRight: 6 }} />
-                  <Text style={styles.openDocsBtnText}>
-                    Ouvrir les documents ({colis.fromCity})
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-
-            {/* Action Bar */}
-            {(onEdit || onDelete) && (
-              <View style={styles.actionBarRow}>
-                {onDelete && (
+                <View style={styles.printButtonsRow}>
+                  {/* Print Ticket Button */}
                   <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={() => onDelete(colis)}
+                    style={[styles.printPrimaryBtn, isPrinting && styles.printBtnDisabled]}
+                    onPress={handlePrint}
+                    disabled={isPrinting}
                     activeOpacity={0.85}
                   >
-                    <Trash2 size={16} color="#dc2626" style={{ marginRight: 6 }} />
-                    <Text style={styles.deleteButtonText}>Supprimer</Text>
+                    {isPrinting ? (
+                      <ActivityIndicator size="small" color="#ffffff" />
+                    ) : (
+                      <>
+                        <Printer size={16} color="#ffffff" style={{ marginRight: 6 }} />
+                        <Text style={styles.printPrimaryBtnText}>Imprimer le ticket</Text>
+                      </>
+                    )}
                   </TouchableOpacity>
-                )}
 
-                {onEdit && (
+                  {/* Share PDF Button */}
                   <TouchableOpacity
-                    style={[styles.editButton, { flex: 1 }]}
+                    style={[styles.printSecondaryBtn, isSharing && styles.printBtnDisabled]}
+                    onPress={handleShare}
+                    disabled={isSharing}
+                    activeOpacity={0.85}
+                  >
+                    {isSharing ? (
+                      <ActivityIndicator size="small" color="#1d4ed8" />
+                    ) : (
+                      <>
+                        <Share2 size={15} color="#1d4ed8" style={{ marginRight: 6 }} />
+                        <Text style={styles.printSecondaryBtnText}>PDF</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+
+                {/* Shortcut to Docs by City */}
+                {onOpenDocs && (
+                  <TouchableOpacity
+                    style={styles.openDocsBtn}
                     onPress={() => {
                       onClose();
-                      onEdit(colis);
+                      onOpenDocs(colis.fromCity);
                     }}
-                    activeOpacity={0.85}
+                    activeOpacity={0.8}
                   >
-                    <Edit3 size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-                    <Text style={styles.editButtonText}>Modifier ce colis</Text>
+                    <FileText size={15} color="#475569" style={{ marginRight: 6 }} />
+                    <Text style={styles.openDocsBtnText}>
+                      Ouvrir les documents ({colis.fromCity})
+                    </Text>
                   </TouchableOpacity>
                 )}
               </View>
-            )}
-          </ScrollView>
+
+              {/* Action Bar */}
+              {(onEdit || onDelete) && (
+                <View style={styles.actionBarRow}>
+                  {onDelete && (
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() => onDelete(colis)}
+                      activeOpacity={0.85}
+                    >
+                      <Trash2 size={16} color="#dc2626" style={{ marginRight: 6 }} />
+                      <Text style={styles.deleteButtonText}>Supprimer</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {onEdit && (
+                    <TouchableOpacity
+                      style={[styles.editButton, { flex: 1 }]}
+                      onPress={() => {
+                        onClose();
+                        onEdit(colis);
+                      }}
+                      activeOpacity={0.85}
+                    >
+                      <Edit3 size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                      <Text style={styles.editButtonText}>Modifier ce colis</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+            </ScrollView>
+          </View>
+
+          {isImageViewerVisible && (
+            <GestureHandlerRootView style={styles.imageViewerContainer}>
+              <TouchableOpacity
+                style={styles.imageViewerCloseButton}
+                onPress={closeImageViewer}
+                activeOpacity={0.8}
+              >
+                <X size={24} color="#FFFFFF" strokeWidth={2.5} />
+              </TouchableOpacity>
+              <GestureDetector gesture={imageGesture}>
+                <Animated.Image
+                  source={{ uri: getColisImage(colis.image) }}
+                  style={[
+                    styles.fullScreenImage,
+                    animatedImageStyle,
+                  ]}
+                  resizeMode="contain"
+                />
+              </GestureDetector>
+            </GestureHandlerRootView>
+          )}
         </View>
-      </View>
-    </Modal>
+      </Modal>
+    </>
+
   );
 }
 
@@ -850,5 +961,32 @@ const styles = StyleSheet.create({
     color: '#dc2626',
     fontSize: 14,
     fontWeight: '700',
+  },
+  imageViewerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999,
+    backgroundColor: 'rgba(0, 0, 0, 0.94)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imageViewerCloseButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(40, 40, 40, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

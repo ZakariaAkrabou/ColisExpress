@@ -14,7 +14,7 @@ import {
 import {
   Edit3,
   X,
-  Check,
+  Plus,
   Zap,
   CreditCard,
   Home,
@@ -26,7 +26,9 @@ import {
   Truck,
   CheckCircle2,
 } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
 import type { Colis } from '../../types/colis.types';
+import { getColisImage } from '../../services/colisServece';
 
 export interface UpdateColisProps {
   visible: boolean;
@@ -35,13 +37,6 @@ export interface UpdateColisProps {
   onClose: () => void;
   onSubmit: (updatedColis: Colis) => Promise<boolean | void> | void;
 }
-
-const PRESET_IMAGES = [
-  'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=500',
-  'https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=500',
-  'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=500',
-  'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?w=500',
-];
 
 export default function UpdateColis({
   visible,
@@ -62,8 +57,37 @@ export default function UpdateColis({
   const [isADomicile, setIsADomicile] = useState<boolean>(true);
   const [status, setStatus] = useState<Colis['status']>('pending');
   const [description, setDescription] = useState('');
-  const [image, setImage] = useState('');
+  const [image, setImage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const pickImage = async () => {
+    try {
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permission.granted) {
+        Alert.alert(
+          'Permission required',
+          'Allow access to your photos.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets.length > 0) {
+        setImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Image picker error:', error);
+      Alert.alert('Error', 'Unable to select image.');
+    }
+  };
 
   useEffect(() => {
     if (colis && visible) {
@@ -80,7 +104,7 @@ export default function UpdateColis({
       setIsADomicile(colis.isADomicile !== undefined ? colis.isADomicile : true);
       setStatus(colis.status || 'pending');
       setDescription(colis.description || '');
-      setImage(colis.image || PRESET_IMAGES[0]);
+      setImage(colis.image || null);
     }
   }, [colis, visible]);
 
@@ -109,7 +133,7 @@ export default function UpdateColis({
       isADomicile: isADomicile,
       status,
       description: description.trim(),
-      image: image.trim() || PRESET_IMAGES[0],
+      image: image ?? '',
     };
 
     try {
@@ -138,7 +162,7 @@ export default function UpdateColis({
               <View style={styles.headerIconBadge}>
                 <Edit3 size={18} color="#d97706" strokeWidth={2.4} />
               </View>
-              <Text style={styles.modalTitle}>Modifier Colis ({colis.id})</Text>
+              <Text style={styles.modalTitle}>Modifier Colis ({colis.ncommand})</Text>
             </View>
             <TouchableOpacity style={styles.closeButton} onPress={onClose} activeOpacity={0.7}>
               <X size={18} color="#64748b" />
@@ -308,32 +332,36 @@ export default function UpdateColis({
               <Text style={[styles.formSectionTitle, { marginBottom: 0 }]}>Photo du colis</Text>
             </View>
             <View style={styles.imageSelectorContainer}>
-              {PRESET_IMAGES.map((imgUrl, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.presetImageWrapper,
-                    image === imgUrl && styles.presetImageSelected,
-                  ]}
-                  onPress={() => setImage(imgUrl)}
-                  activeOpacity={0.85}
-                >
-                  <Image source={{ uri: imgUrl }} style={styles.presetImage} />
-                  {image === imgUrl && (
-                    <View style={styles.selectedCheckOverlay}>
-                      <Check size={12} color="#FFFFFF" strokeWidth={3} />
-                    </View>
-                  )}
-                </TouchableOpacity>
-              ))}
+              <TouchableOpacity
+                onPress={pickImage}
+                style={styles.imagePicker}
+                activeOpacity={0.8}
+              >
+                {image ? (
+                  <Image
+                    source={{ uri: getColisImage(image) }}
+                    style={styles.selectedImage}
+                  />
+                ) : (
+                  <View style={styles.imagePlaceholder}>
+                    <Plus size={24} color="#2563eb" />
+                    <Text style={styles.imagePickerText}>
+                      Ajouter une photo
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
             </View>
-            <TextInput
-              style={styles.formInput}
-              placeholder="Ou URL personnalisée de l'image"
-              placeholderTextColor="#94a3b8"
-              value={image}
-              onChangeText={setImage}
-            />
+
+            {image && (
+              <TouchableOpacity
+                onPress={() => setImage(null)}
+                style={styles.removeImageButton}
+              >
+                <X size={14} color="#dc2626" />
+                <Text style={styles.removeImageText}>Supprimer la photo</Text>
+              </TouchableOpacity>
+            )}
 
             {/* Sender Details */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, marginTop: 12 }}>
@@ -615,38 +643,45 @@ const styles = StyleSheet.create({
   },
 
   imageSelectorContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     marginBottom: 8,
   },
-  presetImageWrapper: {
-    width: '23%',
-    height: 60,
-    borderRadius: 10,
+  imagePicker: {
+    width: '100%',
+    height: 160,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+    borderStyle: 'dashed',
     overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: '#e2e8f0',
-    position: 'relative',
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#eff6ff',
   },
-  presetImageSelected: {
-    borderColor: '#2563eb',
-  },
-  presetImage: {
+  selectedImage: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
   },
-  selectedCheckOverlay: {
-    position: 'absolute',
-    top: 3,
-    right: 3,
-    backgroundColor: '#2563eb',
-    borderRadius: 9,
-    width: 18,
-    height: 18,
-    justifyContent: 'center',
+  imagePlaceholder: {
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imagePickerText: {
+    color: '#2563eb',
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 8,
+  },
+  removeImageButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    marginBottom: 8,
+    gap: 5,
+  },
+  removeImageText: {
+    color: '#dc2626',
+    fontSize: 12,
+    fontWeight: '600',
   },
   formInput: {
     backgroundColor: '#FFFFFF',

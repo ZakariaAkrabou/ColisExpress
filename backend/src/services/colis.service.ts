@@ -312,6 +312,10 @@ export class ColisService {
       throw new Error('Colis not found');
     }
 
+    if (!data || typeof data !== 'object') {
+      throw new Error('At least one field must be provided to update');
+    }
+
     const updateData: Partial<IColis> = {};
 
     if (data.senderName !== undefined) {
@@ -381,11 +385,17 @@ export class ColisService {
     // Note: orderInCommand and ncommand sent from client are ignored to prevent tampering
 
     if (data.isPaid !== undefined) {
-      updateData.isPaid = Boolean(data.isPaid);
+      updateData.isPaid =
+        typeof data.isPaid === 'string'
+          ? (data.isPaid as string).toLowerCase() === 'true'
+          : Boolean(data.isPaid);
     }
 
     if (data.isADomicile !== undefined) {
-      updateData.isADomicile = Boolean(data.isADomicile);
+      updateData.isADomicile =
+        typeof data.isADomicile === 'string'
+          ? (data.isADomicile as string).toLowerCase() === 'true'
+          : Boolean(data.isADomicile);
     }
 
     if (data.status !== undefined) {

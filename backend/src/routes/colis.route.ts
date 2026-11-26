@@ -14,7 +14,7 @@ router.delete('/bulk', ColisController.deleteColisBulk);
 router.delete('/all', ColisController.deleteAllColis);
 
 router.get('/:id', ColisController.getColisById);
-router.put('/:id', ColisController.updateColis);
+router.put('/:id', upload.single('image'), ColisController.updateColis);
 router.delete('/:id', ColisController.deleteColis);
 
 export default router;

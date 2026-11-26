@@ -155,7 +155,12 @@ const image = req.file
         return;
       }
 
-      const colis = await ColisService.updateColis(id as string, req.body);
+      const updatePayload = {
+        ...(req.body ?? {}),
+        ...(req.file ? { image: `/uploads/${req.file.filename}` } : {}),
+      };
+
+      const colis = await ColisService.updateColis(id as string, updatePayload);
 
       res.status(200).json({
         message: 'Colis updated successfully',

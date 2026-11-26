@@ -89,37 +89,51 @@ export const getColisById = async (id: string): Promise<Colis> => {
   return normalizeColis(response.data.colis);
 };
 
-export const createColis = async (
-  data: CreateColisInput
-): Promise<Colis> => {
-  const isLocalImage =
-    Boolean(data.image) &&
-    !data.image!.startsWith('http://') &&
-    !data.image!.startsWith('https://');
+const isLocalImageUri = (image?: string): boolean =>
+  Boolean(image) &&
+  !image!.startsWith('http://') &&
+  !image!.startsWith('https://') &&
+  !image!.startsWith('/uploads/');
 
-  if (!isLocalImage) {
-    const response = await api.post<SingleColisResponse>('/colis', data);
-    return normalizeColis(response.data.colis);
-  }
-
+const buildColisFormData = (
+  data: CreateColisInput | UpdateColisInput
+): FormData => {
   const formData = new FormData();
   Object.entries(data).forEach(([key, value]) => {
     if (value === undefined || value === null || key === 'image') return;
     formData.append(key, String(value));
   });
 
-  const uri = data.image!;
-  const filename = uri.split('/').pop() || `colis-${Date.now()}.jpg`;
-  const ext = filename.split('.').pop()?.toLowerCase();
-  const mimeType =
-    ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+  if (data.image && isLocalImageUri(data.image)) {
+    const uri = data.image;
+    const filename = uri.split('/').pop() || `colis-${Date.now()}.jpg`;
+    const ext = filename.split('.').pop()?.toLowerCase();
+    const mimeType =
+      ext === 'png'
+        ? 'image/png'
+        : ext === 'webp'
+        ? 'image/webp'
+        : 'image/jpeg';
 
-  formData.append('image', {
-    uri,
-    name: filename,
-    type: mimeType,
-  } as any);
+    formData.append('image', {
+      uri,
+      name: filename,
+      type: mimeType,
+    } as any);
+  }
 
+  return formData;
+};
+
+export const createColis = async (
+  data: CreateColisInput
+): Promise<Colis> => {
+  if (!isLocalImageUri(data.image)) {
+    const response = await api.post<SingleColisResponse>('/colis', data);
+    return normalizeColis(response.data.colis);
+  }
+
+  const formData = buildColisFormData(data);
   const response = await api.post<SingleColisResponse>('/colis', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
@@ -132,9 +146,24 @@ export const updateColis = async (
   id: string,
   data: UpdateColisInput
 ): Promise<Colis> => {
+  if (!isLocalImageUri(data.image)) {
+    const response = await api.put<SingleColisResponse>(
+      `/colis/${id}`,
+      data
+    );
+
+    return normalizeColis(response.data.colis);
+  }
+
+  const formData = buildColisFormData(data);
   const response = await api.put<SingleColisResponse>(
     `/colis/${id}`,
-    data
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
   );
 
   return normalizeColis(response.data.colis);
