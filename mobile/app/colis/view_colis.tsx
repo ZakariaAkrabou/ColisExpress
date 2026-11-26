@@ -1,3 +1,4 @@
+//view colis
 import React, { useState } from 'react';
 import {
   View,
@@ -28,8 +29,10 @@ import {
   User,
   Phone,
   Scale,
+  Trash2,
 } from 'lucide-react-native';
 import { Colis } from './create-colis';
+import { getColisImage } from '../../services/colisServece';
 import {
   generateSingleColisPrintHTML,
   printHtmlContent,
@@ -41,6 +44,7 @@ export interface ViewColisProps {
   colis: Colis | null;
   onClose: () => void;
   onEdit?: (colis: Colis) => void;
+  onDelete?: (colis: Colis) => void;
   onStatusChange?: (colisId: string, newStatus: Colis['status']) => void;
   onOpenDocs?: (city?: string) => void;
 }
@@ -52,6 +56,7 @@ export default function ViewColis({
   colis,
   onClose,
   onEdit,
+  onDelete,
   onStatusChange,
   onOpenDocs,
 }: ViewColisProps) {
@@ -146,11 +151,11 @@ export default function ViewColis({
             {/* Parcel Image Banner */}
             <View style={styles.imageBannerContainer}>
               <Image
-                source={{ uri: colis.image || DEFAULT_IMAGE }}
+                source={{ uri: getColisImage(colis.image) }}
                 style={styles.imageBanner}
               />
               <View style={styles.imageOverlayGradient}>
-                <Text style={styles.imageOverlayTracking}>{colis.id}</Text>
+                <Text style={styles.imageOverlayTracking}>{colis.ncommand}</Text>
                 <View style={styles.bannerBadgesGroup}>
                   <View style={[styles.paidBadgeBanner, isPaid ? styles.paidBannerSuccess : styles.paidBannerDanger, { flexDirection: 'row', alignItems: 'center' }]}>
                     <View
@@ -399,18 +404,33 @@ export default function ViewColis({
             </View>
 
             {/* Action Bar */}
-            {onEdit && (
-              <TouchableOpacity
-                style={styles.editButton}
-                onPress={() => {
-                  onClose();
-                  onEdit(colis);
-                }}
-                activeOpacity={0.85}
-              >
-                <Edit3 size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-                <Text style={styles.editButtonText}>Modifier ce colis</Text>
-              </TouchableOpacity>
+            {(onEdit || onDelete) && (
+              <View style={styles.actionBarRow}>
+                {onDelete && (
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => onDelete(colis)}
+                    activeOpacity={0.85}
+                  >
+                    <Trash2 size={16} color="#dc2626" style={{ marginRight: 6 }} />
+                    <Text style={styles.deleteButtonText}>Supprimer</Text>
+                  </TouchableOpacity>
+                )}
+
+                {onEdit && (
+                  <TouchableOpacity
+                    style={[styles.editButton, { flex: 1 }]}
+                    onPress={() => {
+                      onClose();
+                      onEdit(colis);
+                    }}
+                    activeOpacity={0.85}
+                  >
+                    <Edit3 size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                    <Text style={styles.editButtonText}>Modifier ce colis</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             )}
           </ScrollView>
         </View>
@@ -557,7 +577,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   detailValueHighlight: {
-    fontSize: 15,
+    fontSize: 13,
     color: '#1d4ed8',
     fontWeight: '800',
   },
@@ -807,5 +827,28 @@ const styles = StyleSheet.create({
     color: '#334155',
     fontSize: 12,
     fontWeight: '600',
+  },
+  actionBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fef2f2',
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    borderRadius: 12,
+    paddingVertical: 13,
+    paddingHorizontal: 16,
+  },
+  deleteButtonText: {
+    color: '#dc2626',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
+import path from 'path';
 import authRoutes from './routes/auth.route';
 import clientRoutes from './routes/client.route';
 import colisRoutes from './routes/colis.route';
@@ -29,6 +30,7 @@ const createApp = (): Application => {
 //     max: 100,
 //   });
 //   app.use(limiter);
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 
   app.use('/api/auth', authRoutes);

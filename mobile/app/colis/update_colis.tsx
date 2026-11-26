@@ -26,14 +26,14 @@ import {
   Truck,
   CheckCircle2,
 } from 'lucide-react-native';
-import { Colis } from './create-colis';
+import type { Colis } from '../../types/colis.types';
 
 export interface UpdateColisProps {
   visible: boolean;
   colis: Colis | null;
   direction?: 'FR_TO_MA' | 'MA_TO_FR';
   onClose: () => void;
-  onSubmit: (updatedColis: Colis) => void;
+  onSubmit: (updatedColis: Colis) => Promise<boolean | void> | void;
 }
 
 const PRESET_IMAGES = [
@@ -63,6 +63,7 @@ export default function UpdateColis({
   const [status, setStatus] = useState<Colis['status']>('pending');
   const [description, setDescription] = useState('');
   const [image, setImage] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (colis && visible) {
@@ -85,7 +86,9 @@ export default function UpdateColis({
 
   if (!colis) return null;
 
-  const handleUpdateSubmit = () => {
+  const handleUpdateSubmit = async () => {
+    if (saving) return;
+
     if (!senderName.trim() || !receiverName.trim() || !fromCity.trim() || !toCity.trim() || !weight.trim() || !price.trim()) {
       Alert.alert('Champs obligatoires', 'Veuillez remplir tous les champs obligatoires marqués d\'un *');
       return;
@@ -109,8 +112,15 @@ export default function UpdateColis({
       image: image.trim() || PRESET_IMAGES[0],
     };
 
-    onSubmit(updatedColis);
-    onClose();
+    try {
+      setSaving(true);
+      const result = await onSubmit(updatedColis);
+      if (result !== false) {
+        onClose();
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -424,11 +434,14 @@ export default function UpdateColis({
             />
 
             <TouchableOpacity
-              style={styles.formSubmitButton}
+              style={[styles.formSubmitButton, saving && { opacity: 0.7 }]}
               onPress={handleUpdateSubmit}
+              disabled={saving}
               activeOpacity={0.85}
             >
-              <Text style={styles.formSubmitText}>Enregistrer les modifications</Text>
+              <Text style={styles.formSubmitText}>
+                {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
+              </Text>
             </TouchableOpacity>
           </ScrollView>
         </View>

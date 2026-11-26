@@ -10,44 +10,24 @@ import {
   Modal,
   Alert,
   Image,
+  ActivityIndicator,
 } from 'react-native';
-import { Plus, X, ArrowLeft, ArrowRight, Check, Home, Package, User, MapPin } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { Plus, X, ArrowLeft, ArrowRight, Check, Home, Package, User, Users, Search, MapPin, Phone } from 'lucide-react-native';
 import { FranceFlagBadge, MoroccoFlagBadge } from '../../components/common/Icons';
+import { useClients } from '../../hooks/useClients';
+import type { Colis } from '../../types/colis.types';
+import type { Client } from '../../types/clients.types';
 
-export interface Colis {
-  id: string;
-  senderName: string;
-  senderPhone: string;
-  receiverName: string;
-  receiverPhone: string;
-  fromCity: string;
-  toCity: string;
-  quantity?: number;
-  orderInCommand?: number;
-  ncommand?: string;
-  weight: number; // in kg
-  price: number; // in MAD
-  isPaid?: boolean; // Payment status (true = Yes/Payed, false = No/Unpaid)
-  isADomicile?: boolean; // (true = À domicile, false = Point de collecte)
-  status: 'pending' | 'in_transit' | 'delivered';
-  date: string;
-  description: string;
-  image?: string;
-}
+export type { Colis };
 
 export interface CreateColisProps {
   visible: boolean;
   direction: 'FR_TO_MA' | 'MA_TO_FR';
   onClose: () => void;
-  onSubmit: (newColis: Colis) => void;
+  onSubmit: (newColis: Colis) => Promise<boolean | void> | void;
 }
 
-const PRESET_IMAGES = [
-  'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=500',
-  'https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=500',
-  'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=500',
-  'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?w=500',
-];
 
 export default function CreateColis({
   visible,
@@ -56,6 +36,12 @@ export default function CreateColis({
   onSubmit,
 }: CreateColisProps) {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const [saving, setSaving] = useState(false);
+
+  // Existing client picker state
+  const { clients, loading: loadingClients, fetchClients } = useClients();
+  const [clientPickerTarget, setClientPickerTarget] = useState<'sender' | 'receiver' | null>(null);
+  const [clientSearch, setClientSearch] = useState('');
 
   // Form State
   const [senderName, setSenderName] = useState('');
@@ -70,7 +56,37 @@ export default function CreateColis({
   const [isPaid, setIsPaid] = useState<boolean>(true); // Default: Yes (Paid)
   const [isADomicile, setIsADomicile] = useState<boolean>(true); // Default: À domicile
   const [description, setDescription] = useState('');
-  const [image, setImage] = useState(PRESET_IMAGES[0]);
+  const [image, setImage] = useState<string | null>(null);
+
+  const pickImage = async () => {
+    try {
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permission.granted) {
+        Alert.alert(
+          'Permission required',
+          'Allow access to your photos.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets.length > 0) {
+        setImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Image picker error:', error);
+      Alert.alert('Error', 'Unable to select image.');
+    }
+  };
+
 
   // Reset step & cities when modal opens
   useEffect(() => {
@@ -100,8 +116,45 @@ export default function CreateColis({
     setIsPaid(true);
     setIsADomicile(true);
     setDescription('');
-    setImage(PRESET_IMAGES[0]);
+    setImage(null);
+    setClientPickerTarget(null);
+    setClientSearch('');
   };
+
+  const openClientPicker = (target: 'sender' | 'receiver') => {
+    setClientSearch('');
+    setClientPickerTarget(target);
+    if (clients.length === 0) {
+      fetchClients();
+    }
+  };
+
+  const handleSelectClient = (client: Client) => {
+    if (clientPickerTarget === 'sender') {
+      setSenderName(client.name);
+      setSenderPhone(client.phone);
+      if (client.city) {
+        setFromCity(client.city);
+      }
+    } else if (clientPickerTarget === 'receiver') {
+      setReceiverName(client.name);
+      setReceiverPhone(client.phone);
+      if (client.city) {
+        setToCity(client.city);
+      }
+    }
+    setClientPickerTarget(null);
+  };
+
+  const filteredClients = clients.filter((c) => {
+    const term = clientSearch.trim().toLowerCase();
+    if (!term) return true;
+    return (
+      c.name.toLowerCase().includes(term) ||
+      c.phone.toLowerCase().includes(term) ||
+      (c.city && c.city.toLowerCase().includes(term))
+    );
+  });
 
   const handleNextStep1 = () => {
     if (!senderName.trim()) {
@@ -119,7 +172,9 @@ export default function CreateColis({
     setCurrentStep(3);
   };
 
-  const handleFormSubmit = () => {
+  const handleFormSubmit = async () => {
+    if (saving) return;
+
     if (!fromCity.trim() || !toCity.trim() || !weight.trim() || !price.trim()) {
       Alert.alert('Champs obligatoires', 'Veuillez renseigner la ville de départ, la destination, le poids et le prix.');
       return;
@@ -146,12 +201,20 @@ export default function CreateColis({
       status: 'pending',
       date: new Date().toLocaleDateString('fr-FR'),
       description: description.trim() || 'Aucune description fournie',
-      image: image || PRESET_IMAGES[0],
+      image: image || undefined,
+      direction,
     };
 
-    onSubmit(newColis);
-    resetForm();
-    onClose();
+    try {
+      setSaving(true);
+      const result = await onSubmit(newColis);
+      if (result !== false) {
+        resetForm();
+        onClose();
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -249,6 +312,15 @@ export default function CreateColis({
               <View style={styles.stepFormContent}>
                 <Text style={styles.formSectionTitle}>Étape 1 : Expéditeur</Text>
                 <Text style={styles.stepInstructionText}>Saisissez les coordonnées de la personne qui envoie le colis.</Text>
+
+                <TouchableOpacity
+                  style={styles.selectClientButton}
+                  onPress={() => openClientPicker('sender')}
+                  activeOpacity={0.8}
+                >
+                  <Users size={15} color="#2563eb" strokeWidth={2.2} style={{ marginRight: 8 }} />
+                  <Text style={styles.selectClientButtonText}>Choisir un client existant</Text>
+                </TouchableOpacity>
 
                 <Text style={styles.inputSubLabel}>Nom complet *</Text>
                 <TextInput
@@ -352,6 +424,15 @@ export default function CreateColis({
               <View style={styles.stepFormContent}>
                 <Text style={styles.formSectionTitle}>Étape 2 : Destinataire</Text>
                 <Text style={styles.stepInstructionText}>Saisissez les coordonnées de la personne qui réceptionnera le colis.</Text>
+
+                <TouchableOpacity
+                  style={styles.selectClientButton}
+                  onPress={() => openClientPicker('receiver')}
+                  activeOpacity={0.8}
+                >
+                  <Users size={15} color="#2563eb" strokeWidth={2.2} style={{ marginRight: 8 }} />
+                  <Text style={styles.selectClientButtonText}>Choisir un client existant</Text>
+                </TouchableOpacity>
 
                 <Text style={styles.inputSubLabel}>Nom complet *</Text>
                 <TextInput
@@ -459,7 +540,7 @@ export default function CreateColis({
               </View>
             )}
 
-           
+
             {currentStep === 3 && (
               <View style={styles.stepFormContent}>
                 <Text style={styles.formSectionTitle}>Étape 3 : Caractéristiques & Photo</Text>
@@ -478,33 +559,38 @@ export default function CreateColis({
 
                 {/* Colis Image Selector */}
                 <Text style={styles.inputSubLabel}>Photo du colis</Text>
+
                 <View style={styles.imageSelectorContainer}>
-                  {PRESET_IMAGES.map((imgUrl, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={[
-                        styles.presetImageWrapper,
-                        image === imgUrl && styles.presetImageSelected,
-                      ]}
-                      onPress={() => setImage(imgUrl)}
-                      activeOpacity={0.85}
-                    >
-                      <Image source={{ uri: imgUrl }} style={styles.presetImage} />
-                      {image === imgUrl && (
-                        <View style={styles.selectedCheckOverlay}>
-                          <Check size={12} color="#FFFFFF" strokeWidth={3} />
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  ))}
+                  <TouchableOpacity
+                    onPress={pickImage}
+                    style={styles.imagePicker}
+                    activeOpacity={0.8}
+                  >
+                    {image ? (
+                      <Image
+                        source={{ uri: image }}
+                        style={styles.selectedImage}
+                      />
+                    ) : (
+                      <View style={styles.imagePlaceholder}>
+                        <Plus size={24} color="#2563eb" />
+                        <Text style={styles.imagePickerText}>
+                          Ajouter une photo
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
                 </View>
-                <TextInput
-                  style={styles.formInput}
-                  placeholder="Ou collez l'URL personnalisée d'une image"
-                  placeholderTextColor="#94a3b8"
-                  value={image}
-                  onChangeText={setImage}
-                />
+
+                {image && (
+                  <TouchableOpacity
+                    onPress={() => setImage(null)}
+                    style={styles.removeImageButton}
+                  >
+                    <X size={14} color="#dc2626" />
+                    <Text style={styles.removeImageText}>Supprimer la photo</Text>
+                  </TouchableOpacity>
+                )}
 
                 {/* Package Specifications */}
                 <Text style={styles.inputSubLabel}>Métriques du colis</Text>
@@ -556,11 +642,14 @@ export default function CreateColis({
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[styles.formSubmitButton, { flex: 1, marginLeft: 10 }]}
+                    style={[styles.formSubmitButton, { flex: 1, marginLeft: 10 }, saving && { opacity: 0.7 }]}
                     onPress={handleFormSubmit}
+                    disabled={saving}
                     activeOpacity={0.85}
                   >
-                    <Text style={styles.formSubmitText}>Créer l'expédition</Text>
+                    <Text style={styles.formSubmitText}>
+                      {saving ? 'Enregistrement...' : "Créer l'expédition"}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -568,6 +657,97 @@ export default function CreateColis({
           </ScrollView>
         </View>
       </View>
+
+      {/* Client Picker Modal */}
+      <Modal
+        visible={clientPickerTarget !== null}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setClientPickerTarget(null)}
+      >
+        <View style={styles.pickerOverlay}>
+          <View style={styles.pickerContent}>
+            <View style={styles.modalHeader}>
+              <View style={styles.headerTitleContainer}>
+                <View style={styles.headerIconBadge}>
+                  <Users size={18} color="#2563eb" strokeWidth={2.4} />
+                </View>
+                <Text style={styles.modalTitle}>
+                  {clientPickerTarget === 'sender'
+                    ? "Sélectionner l'expéditeur"
+                    : 'Sélectionner le destinataire'}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setClientPickerTarget(null)}
+                activeOpacity={0.7}
+              >
+                <X size={18} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.pickerSearchContainer}>
+              <Search size={16} color="#94a3b8" />
+              <TextInput
+                style={styles.pickerSearchInput}
+                placeholder="Rechercher par nom, téléphone, ville..."
+                placeholderTextColor="#94a3b8"
+                value={clientSearch}
+                onChangeText={setClientSearch}
+              />
+              {clientSearch ? (
+                <TouchableOpacity onPress={() => setClientSearch('')} activeOpacity={0.7}>
+                  <X size={15} color="#64748b" />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
+            <ScrollView style={styles.pickerList} showsVerticalScrollIndicator={false}>
+              {loadingClients && clients.length === 0 ? (
+                <ActivityIndicator size="small" color="#2563eb" style={{ marginVertical: 24 }} />
+              ) : filteredClients.length === 0 ? (
+                <View style={styles.pickerEmptyState}>
+                  <Users size={32} color="#cbd5e1" strokeWidth={1.6} />
+                  <Text style={styles.pickerEmptyText}>Aucun client trouvé</Text>
+                </View>
+              ) : (
+                filteredClients.map((client) => (
+                  <TouchableOpacity
+                    key={client.id}
+                    style={styles.pickerItem}
+                    onPress={() => handleSelectClient(client)}
+                    activeOpacity={0.75}
+                  >
+                    <View style={styles.pickerItemAvatar}>
+                      <User size={16} color="#2563eb" strokeWidth={2.2} />
+                    </View>
+                    <View style={styles.pickerItemInfo}>
+                      <Text style={styles.pickerItemName} numberOfLines={1}>
+                        {client.name}
+                      </Text>
+                      <View style={styles.pickerItemMetaRow}>
+                        <View style={styles.pickerItemMeta}>
+                          <MapPin size={11} color="#64748b" style={{ marginRight: 3 }} />
+                          <Text style={styles.pickerItemMetaText} numberOfLines={1}>
+                            {client.city || 'Non renseignée'}
+                          </Text>
+                        </View>
+                        <View style={styles.pickerItemMeta}>
+                          <Phone size={11} color="#64748b" style={{ marginRight: 3 }} />
+                          <Text style={styles.pickerItemMetaText} numberOfLines={1}>
+                            {client.phone}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </Modal>
   );
 }
@@ -914,4 +1094,156 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
+  selectClientButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#eff6ff',
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 8,
+  },
+  selectClientButtonText: {
+    color: '#1d4ed8',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  pickerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+  },
+  pickerContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 18,
+    maxHeight: '78%',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  pickerSearchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    paddingHorizontal: 12,
+    marginBottom: 12,
+  },
+  pickerSearchInput: {
+    flex: 1,
+    color: '#0f172a',
+    fontSize: 13.5,
+    paddingVertical: 9,
+    paddingHorizontal: 8,
+  },
+  pickerList: {
+    maxHeight: 340,
+  },
+  pickerEmptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 32,
+  },
+  pickerEmptyText: {
+    color: '#64748b',
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 8,
+  },
+  pickerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  pickerItemAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#eff6ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  pickerItemInfo: {
+    flex: 1,
+  },
+  pickerItemName: {
+    color: '#0f172a',
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 3,
+  },
+  pickerItemMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  pickerItemMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  pickerItemMetaText: {
+    color: '#64748b',
+    fontSize: 12,
+    fontWeight: '500',
+  },imagePicker: {
+  width: '100%',
+  height: 160,
+  borderRadius: 12,
+  borderWidth: 1,
+  borderColor: '#bfdbfe',
+  borderStyle: 'dashed',
+  overflow: 'hidden',
+  backgroundColor: '#eff6ff',
+},
+
+selectedImage: {
+  width: '100%',
+  height: '100%',
+  resizeMode: 'cover',
+},
+
+imagePlaceholder: {
+  flex: 1,
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+
+imagePickerText: {
+  color: '#2563eb',
+  fontSize: 13,
+  fontWeight: '700',
+  marginTop: 8,
+},
+
+removeImageButton: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  alignSelf: 'flex-end',
+  marginBottom: 8,
+  gap: 5,
+},
+
+removeImageText: {
+  color: '#dc2626',
+  fontSize: 12,
+  fontWeight: '600',
+},
 });

@@ -4,7 +4,7 @@ import { View, StyleSheet, StatusBar, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import HomeScreen from './home/home';
-import ColisPage, { Colis } from './colis/colis_page';
+import ColisPage from './colis/colis_page';
 import ClientsPage, { Client } from './client/clientPage';
 import LocationsPage from './locations/locations_page';
 import DocsPage from './docs/docs_page';
@@ -16,6 +16,7 @@ import SplashScreen from './auth/splash';
 import LoginScreen from './auth/login';
 
 import { INITIAL_COLIS } from '../services/mockData';
+import type { Colis } from '../types/colis.types';
 import {
   getClients,
   createClient,
@@ -66,18 +67,6 @@ export default function AppScreen() {
 
   const toggleDirection = () => {
     setDirection((prev) => (prev === 'MA_TO_FR' ? 'FR_TO_MA' : 'MA_TO_FR'));
-  };
-
-  // ---------------- COLIS: existing local behavior ----------------
-
-  const handleAddColis = (newColis: Colis) => {
-    setColisList((prev) => [newColis, ...prev]);
-  };
-
-  const handleUpdateColis = (updatedColis: Colis) => {
-    setColisList((prev) =>
-      prev.map((c) => (c.id === updatedColis.id ? updatedColis : c))
-    );
   };
 
   // ---------------- CLIENTS: MongoDB API ----------------
@@ -176,9 +165,6 @@ export default function AppScreen() {
         return (
           <ColisPage
             direction={direction}
-            colisList={colisList}
-            onAddColis={handleAddColis}
-            onUpdateColis={handleUpdateColis}
             onNavigateToDocs={() => setCurrentRoute('docs')}
           />
         );

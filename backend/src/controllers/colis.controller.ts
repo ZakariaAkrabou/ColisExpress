@@ -10,6 +10,8 @@ export class ColisController {
    */
   static async createColis(req: Request, res: Response): Promise<void> {
     try {
+      const body = req.body ?? {};
+
       const {
         senderName,
         senderPhone,
@@ -25,10 +27,13 @@ export class ColisController {
         status,
         date,
         description,
-        image,
         direction,
-      } = req.body;
+      } = body;
 
+const image = req.file
+  ? `/uploads/${req.file.filename}`
+  : req.body.image;
+        
       if (!senderName || !senderPhone || !receiverName || !receiverPhone || !fromCity || !toCity || weight === undefined || price === undefined) {
         res.status(400).json({
           message: 'Sender name, sender phone, receiver name, receiver phone, departure city, destination city, weight, and price are required',

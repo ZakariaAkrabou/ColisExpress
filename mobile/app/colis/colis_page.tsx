@@ -9,14 +9,20 @@ import {
   ScrollView,
   Image,
   Linking,
+  ActivityIndicator,
+  RefreshControl,
+  Alert,
+  Platform,
 } from 'react-native';
+import { useColis } from '../../hooks/useColis';
+import { getColisImage } from '../../services/colisServece';
+import type { Colis, CreateColisInput, UpdateColisInput } from '../../types/colis.types';
 import {
   Package,
   Plus,
   Search,
   MapPin,
   Phone,
-  FileText,
   Clock,
   Truck,
   CheckCircle2,
@@ -25,23 +31,20 @@ import {
   ChevronUp,
   X,
   MessageCircle,
-  Eye,
+  Trash2,
   Pencil,
 } from 'lucide-react-native';
 
-import CreateColis, { Colis } from './create-colis';
+import CreateColis from './create-colis';
 import ViewColis from './view_colis';
 import UpdateColis from './update_colis';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FranceFlagBadge, MoroccoFlagBadge } from '../../components/common/Icons';
 
-export { Colis };
+export type { Colis };
 
 export interface ColisPageProps {
   direction: 'FR_TO_MA' | 'MA_TO_FR';
-  colisList: Colis[];
-  onAddColis: (colis: Colis) => void;
-  onUpdateColis?: (updatedColis: Colis) => void;
   onNavigateToDocs?: (city?: string) => void;
 }
 
@@ -49,11 +52,18 @@ const DEFAULT_PARCEL_IMAGE = 'https://images.unsplash.com/photo-1586528116311-ad
 
 export default function ColisPage({
   direction,
-  colisList,
-  onAddColis,
-  onUpdateColis,
   onNavigateToDocs,
 }: ColisPageProps) {
+  const {
+    colis: colisList,
+    loading,
+    error,
+    fetchColis,
+    addColis,
+    modifyColis,
+    removeColis,
+  } = useColis();
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'in_transit' | 'delivered'>('all');
   const [cityFilter, setCityFilter] = useState('all');
@@ -65,22 +75,52 @@ export default function ColisPage({
 
   const [statusMenuVisible, setStatusMenuVisible] = useState(false);
   const [cityMenuVisible, setCityMenuVisible] = useState(false);
+  const handleDeleteColis = (item: Colis) => {
+    const confirmDelete = async () => {
+      try {
+        await removeColis(item.id);
+        if (viewColis && viewColis.id === item.id) {
+          setViewColis(null);
+        }
+      } catch (err: any) {
+        Alert.alert(
+          'Erreur',
+          err?.response?.data?.message || err?.message || 'Impossible de supprimer le colis.'
+        );
+      }
+    };
 
-  const handleUpdate = (updated: Colis) => {
-    if (onUpdateColis) {
-      onUpdateColis(updated);
+    const message = `Voulez-vous vraiment supprimer le colis ${item.ncommand || item.id} ?`;
+
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.confirm(message)) {
+        confirmDelete();
+      }
+      return;
     }
-    if (viewColis && viewColis.id === updated.id) {
-      setViewColis(updated);
+
+    Alert.alert('Supprimer le colis', message, [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Supprimer',
+        style: 'destructive',
+        onPress: confirmDelete,
+      },
+    ]);
+  };
+  const handleUpdate = async (colisId: string, data: UpdateColisInput) => {
+    try {
+      const updated = await modifyColis(colisId, data);
+      if (viewColis && viewColis.id === colisId) {
+        setViewColis(updated);
+      }
+    } catch (err: any) {
+      Alert.alert('Erreur', err?.message || 'Impossible de modifier le colis.');
     }
   };
 
-  const handleStatusQuickChange = (colisId: string, newStatus: Colis['status']) => {
-    const itemToUpdate = colisList.find((c) => c.id === colisId);
-    if (itemToUpdate) {
-      const updated = { ...itemToUpdate, status: newStatus };
-      handleUpdate(updated);
-    }
+  const handleStatusQuickChange = async (colisId: string, newStatus: Colis['status']) => {
+    await handleUpdate(colisId, { status: newStatus });
   };
 
   const cities = ['all', ...Array.from(new Set(colisList.flatMap((c) => [c.toCity, c.fromCity]).filter(Boolean)))];
@@ -221,10 +261,10 @@ export default function ColisPage({
               {statusFilter === 'all'
                 ? `Tous (${colisList.length})`
                 : statusFilter === 'pending'
-                ? `En attente (${colisList.filter((c) => c.status === 'pending').length})`
-                : statusFilter === 'in_transit'
-                ? `En transit (${colisList.filter((c) => c.status === 'in_transit').length})`
-                : `Livré (${colisList.filter((c) => c.status === 'delivered').length})`}
+                  ? `En attente (${colisList.filter((c) => c.status === 'pending').length})`
+                  : statusFilter === 'in_transit'
+                    ? `En transit (${colisList.filter((c) => c.status === 'in_transit').length})`
+                    : `Livré (${colisList.filter((c) => c.status === 'delivered').length})`}
             </Text>
             {statusMenuVisible ? (
               <ChevronUp size={14} color="#64748b" strokeWidth={2.2} />
@@ -244,10 +284,10 @@ export default function ColisPage({
                   filter === 'all'
                     ? 'Tous'
                     : filter === 'pending'
-                    ? 'En attente'
-                    : filter === 'in_transit'
-                    ? 'En transit'
-                    : 'Livré';
+                      ? 'En attente'
+                      : filter === 'in_transit'
+                        ? 'En transit'
+                        : 'Livré';
                 return (
                   <TouchableOpacity
                     key={filter}
@@ -313,8 +353,31 @@ export default function ColisPage({
         </View>
       </View>
 
+      {/* Loading / Error banner */}
+      {loading && (
+        <ActivityIndicator size="small" color="#2563eb" style={{ marginBottom: 8 }} />
+      )}
+      {error ? (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : null}
+
       {/* 2-by-2 Grid Layout of Colis Cards */}
-      <ScrollView contentContainerStyle={styles.listScrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.listScrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={() => {
+              fetchColis().catch(() => { });
+            }}
+            colors={['#2563eb']}
+            tintColor="#2563eb"
+          />
+        }
+      >
         {filteredColis.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Package size={42} color="#cbd5e1" strokeWidth={1.5} />
@@ -335,8 +398,10 @@ export default function ColisPage({
                   {/* Parcel Image Header */}
                   <View style={styles.cardImageWrapper}>
                     <Image
-                      source={{ uri: item.image || DEFAULT_PARCEL_IMAGE }}
+                      source={{ uri: getColisImage(item.image) }}
                       style={styles.cardImage}
+                      resizeMode="cover"
+                      onError={(e) => console.log('IMAGE ERROR:', e.nativeEvent)}
                     />
                     {/* WhatsApp button - top right of image */}
                     <TouchableOpacity
@@ -351,7 +416,7 @@ export default function ColisPage({
                       <MessageCircle size={15} color="#FFFFFF" strokeWidth={2.4} />
                     </TouchableOpacity>
                     <View style={styles.cardImageOverlay}>
-                      <Text style={styles.trackingIdTag}>{item.id}</Text>
+                      <Text style={styles.trackingIdTag}>{item.ncommand}</Text>
                       <View style={[styles.statusBadge, getStatusStyle(item.status), { flexDirection: 'row', alignItems: 'center' }]}>
                         {renderStatusIcon(item.status, 10)}
                         <Text style={[styles.statusText, getStatusTextStyle(item.status)]}>
@@ -434,16 +499,22 @@ export default function ColisPage({
                     {/* Action Buttons */}
                     <View style={styles.cardActionRow}>
                       <TouchableOpacity
-                        style={styles.viewActionBtn}
-                        onPress={() => setViewColis(item)}
+                        style={styles.deleteActionBtn}
+                        onPress={(e) => {
+                          e?.stopPropagation?.();
+                          handleDeleteColis(item);
+                        }}
                       >
-                        <Eye size={12} color="#1d4ed8" strokeWidth={2.4} style={{ marginRight: 4 }} />
-                        <Text style={styles.viewActionText}>Détails</Text>
+                        <Trash2 size={12} color="#dc2626" strokeWidth={2.4} style={{ marginRight: 4 }} />
+                        <Text style={styles.deleteActionText}>Supprimer</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
                         style={styles.editActionBtn}
-                        onPress={() => setEditColis(item)}
+                        onPress={(e) => {
+                          e?.stopPropagation?.();
+                          setEditColis(item);
+                        }}
                       >
                         <Pencil size={12} color="#d97706" strokeWidth={2.4} style={{ marginRight: 4 }} />
                         <Text style={styles.editActionText}>Modifier</Text>
@@ -462,7 +533,33 @@ export default function ColisPage({
         visible={showCreateModal}
         direction={direction}
         onClose={() => setShowCreateModal(false)}
-        onSubmit={onAddColis}
+        onSubmit={async (newColis) => {
+          try {
+            await addColis({
+              senderName: newColis.senderName,
+              senderPhone: newColis.senderPhone,
+              receiverName: newColis.receiverName,
+              receiverPhone: newColis.receiverPhone,
+              fromCity: newColis.fromCity,
+              toCity: newColis.toCity,
+              weight: newColis.weight,
+              price: newColis.price,
+              quantity: newColis.quantity,
+              isPaid: newColis.isPaid,
+              isADomicile: newColis.isADomicile,
+              status: newColis.status,
+              date: newColis.date,
+              description: newColis.description,
+              image: newColis.image,
+              direction,
+            });
+            setShowCreateModal(false);
+            return true;
+          } catch (err: any) {
+            Alert.alert('Erreur', err?.response?.data?.message || err?.message || 'Impossible de créer le colis.');
+            return false;
+          }
+        }}
       />
 
       <ViewColis
@@ -474,6 +571,7 @@ export default function ColisPage({
           setEditColis(colisToEdit);
         }}
         onStatusChange={handleStatusQuickChange}
+        onDelete={handleDeleteColis}
         onOpenDocs={onNavigateToDocs}
       />
 
@@ -482,13 +580,54 @@ export default function ColisPage({
         colis={editColis}
         direction={direction}
         onClose={() => setEditColis(null)}
-        onSubmit={handleUpdate}
+        onSubmit={async (updatedColis) => {
+          try {
+            const updated = await modifyColis(updatedColis.id, {
+              senderName: updatedColis.senderName,
+              senderPhone: updatedColis.senderPhone,
+              receiverName: updatedColis.receiverName,
+              receiverPhone: updatedColis.receiverPhone,
+              fromCity: updatedColis.fromCity,
+              toCity: updatedColis.toCity,
+              weight: updatedColis.weight,
+              price: updatedColis.price,
+              quantity: updatedColis.quantity,
+              isPaid: updatedColis.isPaid,
+              isADomicile: updatedColis.isADomicile,
+              status: updatedColis.status,
+              description: updatedColis.description,
+              image: updatedColis.image,
+            });
+            if (viewColis && viewColis.id === updatedColis.id) {
+              setViewColis(updated);
+            }
+            setEditColis(null);
+            return true;
+          } catch (err: any) {
+            Alert.alert('Erreur', err?.response?.data?.message || err?.message || 'Impossible de modifier le colis.');
+            return false;
+          }
+        }}
       />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  errorBanner: {
+    backgroundColor: '#fef2f2',
+    borderWidth: 1,
+    borderColor: '#fca5a5',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 8,
+  },
+  errorText: {
+    color: '#b91c1c',
+    fontSize: 12,
+    fontWeight: '600',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',
@@ -918,4 +1057,20 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontWeight: '500',
   },
+  deleteActionBtn: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: '#FEE2E2',
+  paddingVertical : 5,
+ paddingHorizontal: 2,
+  borderRadius: 8,
+},
+
+deleteActionText: {
+  color: '#DC2626',
+  fontSize: 10,
+  fontWeight: '600',
+  marginLeft: 6,
+},
 });
