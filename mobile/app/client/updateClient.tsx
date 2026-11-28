@@ -66,13 +66,13 @@ export const ClientDetailModal: React.FC<ClientDetailProps> = ({
     if (client) {
       setIsEditing(false);
       setEditName(client.name);
-      
+
       const isMoroccoPhone = client.phone.startsWith('+212');
       setEditCountryCode(isMoroccoPhone ? '+212' : '+33');
-      
+
       const rawNumber = client.phone.replace('+212', '').replace('+33', '').trim();
       setEditPhone(rawNumber);
-      
+
       setEditCity(client.city || '');
       setErrors({});
     }
@@ -89,12 +89,20 @@ export const ClientDetailModal: React.FC<ClientDetailProps> = ({
     .toUpperCase();
 
   // Associated colis for this client
+  const normalizePhone = (p?: string) => (p || '').replace(/\s+/g, '');
+  const matchesPerson = (personName?: string, personPhone?: string) => {
+    const clientPhone = normalizePhone(client.phone);
+    const targetPhone = normalizePhone(personPhone);
+    if (clientPhone && targetPhone && clientPhone === targetPhone) return true;
+    return (personName || '').trim().toLowerCase() === client.name.trim().toLowerCase();
+  };
+
+  const sentColis = colisList.filter((c) => matchesPerson(c.senderName, c.senderPhone));
+  const receivedColis = colisList.filter((c) => matchesPerson(c.receiverName, c.receiverPhone));
   const clientColis = colisList.filter(
     (c) =>
-      c.senderPhone.replace(/\s+/g, '') === client.phone.replace(/\s+/g, '') ||
-      c.receiverPhone.replace(/\s+/g, '') === client.phone.replace(/\s+/g, '') ||
-      c.senderName.toLowerCase() === client.name.toLowerCase() ||
-      c.receiverName.toLowerCase() === client.name.toLowerCase()
+      matchesPerson(c.senderName, c.senderPhone) ||
+      matchesPerson(c.receiverName, c.receiverPhone)
   );
 
   const handleCall = () => {
@@ -114,7 +122,7 @@ export const ClientDetailModal: React.FC<ClientDetailProps> = ({
 
   const handleDelete = () => {
     const hasColis = clientColis.length > 0;
-    
+
     Alert.alert(
       'Supprimer le client',
       hasColis
@@ -201,11 +209,8 @@ export const ClientDetailModal: React.FC<ClientDetailProps> = ({
                   {isEditing ? 'Modifier Client' : client.name}
                 </Text>
                 <View style={styles.headerMetaRow}>
-                  <View style={styles.idBadge}>
-                    <Text style={styles.idBadgeText}>{client.id}</Text>
-                  </View>
                   <Text style={styles.totalBadgeText}>
-                    {client.totalShipments || clientColis.length} colis expédiés
+                    {clientColis.length} colis
                   </Text>
                 </View>
               </View>
@@ -470,8 +475,8 @@ export const ClientDetailModal: React.FC<ClientDetailProps> = ({
                             colis.status === 'delivered'
                               ? styles.statusDelivered
                               : colis.status === 'in_transit'
-                              ? styles.statusTransit
-                              : styles.statusPending,
+                                ? styles.statusTransit
+                                : styles.statusPending,
                           ]}
                         >
                           {colis.status === 'delivered' ? (
@@ -485,17 +490,17 @@ export const ClientDetailModal: React.FC<ClientDetailProps> = ({
                             style={[
                               styles.statusBadgeText,
                               colis.status === 'delivered'
-                            ? styles.statusTextDelivered
-                            : colis.status === 'in_transit'
-                            ? styles.statusTextTransit
-                            : styles.statusTextPending,
+                                ? styles.statusTextDelivered
+                                : colis.status === 'in_transit'
+                                  ? styles.statusTextTransit
+                                  : styles.statusTextPending,
                             ]}
                           >
                             {colis.status === 'delivered'
                               ? 'Livré'
                               : colis.status === 'in_transit'
-                              ? 'En transit'
-                              : 'En attente'}
+                                ? 'En transit'
+                                : 'En attente'}
                           </Text>
                         </View>
                       </View>

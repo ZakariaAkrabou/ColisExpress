@@ -20,11 +20,33 @@ import {
   Users,
   MapPin,
 } from 'lucide-react-native';
-import { Colis } from '../colis/colis_page';
+import type { Colis } from '../../types/colis.types';
 import { Client, ClientsPageProps } from '../../types/clients.types';
 import { useClients } from '../../hooks/useClients';
+import { useColis } from '../../hooks/useColis';
 import ClientDetailModal from './updateClient';
 import CreateClientScreen from './createClient';
+
+const normalizePhone = (phone?: string) => (phone || '').replace(/\s+/g, '');
+
+const matchesClient = (client: Client, name?: string, phone?: string) => {
+  const clientPhone = normalizePhone(client.phone);
+  const targetPhone = normalizePhone(phone);
+  if (clientPhone && targetPhone && clientPhone === targetPhone) return true;
+  return (name || '').trim().toLowerCase() === client.name.trim().toLowerCase();
+};
+
+const getClientColisStats = (client: Client, colisList: Colis[]) => {
+  const sent = colisList.filter((c) => matchesClient(client, c.senderName, c.senderPhone));
+  const received = colisList.filter((c) => matchesClient(client, c.receiverName, c.receiverPhone));
+  const uniqueIds = new Set([...sent.map((c) => c.id), ...received.map((c) => c.id)]);
+
+  return {
+    sentCount: sent.length,
+    receivedCount: received.length,
+    totalCount: uniqueIds.size,
+  };
+};
 
 
 
@@ -40,6 +62,7 @@ export default function ClientsPage({
   // UI now gets data from useClients hook
   const [search, setSearch] = useState('');
   const { clients, loading, fetchClients, addClient, modifyClient, removeClient } = useClients();
+  const { colis: liveColisList } = useColis();
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [isCreatingClient, setIsCreatingClient] = useState(false);
 
@@ -174,46 +197,51 @@ const handleDelete = async (clientId: string): Promise<boolean> => {
             </Text>
           </View>
         ) : (
-          filteredClients.map((client) => (
-            <TouchableOpacity
-              key={client.id}
-              style={styles.clientCard}
-              onPress={() => handleSelectClient(client)}
-              activeOpacity={0.75}
-              className="bg-white rounded-2xl p-4 mx-4 mb-2.5 border border-slate-100 flex-row items-center justify-between shadow-xs"
-            >
-              <View style={styles.avatarBadge} className="w-12 h-12 rounded-full bg-blue-50 items-center justify-center mr-3.5">
-                <Package size={22} color="#2563eb" strokeWidth={2.2} />
-              </View>
+          filteredClients.map((client) => {
+            const stats = getClientColisStats(client, liveColisList);
+            return (
+              <TouchableOpacity
+                key={client.id}
+                style={styles.clientCard}
+                onPress={() => handleSelectClient(client)}
+                activeOpacity={0.75}
+                className="bg-white rounded-2xl p-4 mx-4 mb-2.5 border border-slate-100 flex-row items-center justify-between shadow-xs"
+              >
+                <View style={styles.avatarBadge} className="w-12 h-12 rounded-full bg-blue-50 items-center justify-center mr-3.5">
+                  <Package size={22} color="#2563eb" strokeWidth={2.2} />
+                </View>
 
-              <View style={styles.clientInfo} className="flex-1 mr-2">
-                <Text style={styles.clientName} className="text-slate-900 font-bold text-[15px]" numberOfLines={1}>
-                  {client.name}
-                </Text>
-                <View style={styles.clientCityRow}>
-                  <MapPin size={12} color="#64748b" strokeWidth={2.2} />
-                  <Text style={styles.clientCity} numberOfLines={1}>
-                    {client.city}
+                <View style={styles.clientInfo} className="flex-1 mr-2">
+                  <Text style={styles.clientName} className="text-slate-900 font-bold text-[15px]" numberOfLines={1}>
+                    {client.name}
+                  </Text>
+                  <View style={styles.clientCityRow}>
+                    <MapPin size={12} color="#64748b" strokeWidth={2.2} />
+                    <Text style={styles.clientCity} numberOfLines={1}>
+                      {client.city}
+                    </Text>
+                  </View>
+                  <Text style={styles.clientPhone} className="text-slate-600 text-xs font-medium mt-1" numberOfLines={1}>
+                    {client.phone}
                   </Text>
                 </View>
-                <Text style={styles.clientPhone} className="text-slate-600 text-xs font-medium mt-1" numberOfLines={1}>
-                  {client.phone}
-                </Text>
-              </View>
 
-              <View style={styles.colisCountContainer}>
-                <Text style={styles.colisCountText} className="text-slate-600 text-xs font-medium">
-                  {client.totalShipments} colis
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))
+                <View style={styles.colisCountContainer}>
+                  <Text style={styles.colisCountText} className="text-slate-600 text-xs font-medium">
+                    {stats.totalCount} colis
+                  </Text>
+                  
+                </View>
+              </TouchableOpacity>
+            );
+          })
         )}
       </ScrollView>
 
       <ClientDetailModal
         client={selectedClient}
         visible={!!selectedClient}
+        colisList={liveColisList}
         onClose={() => setSelectedClient(null)}
         onUpdateClient={handleUpdate}
         onDeleteClient={handleDelete}
@@ -355,6 +383,12 @@ const styles = StyleSheet.create({
     color: '#475569',
     fontSize: 12,
     fontWeight: '600',
+  },
+  colisBreakdownText: {
+    color: '#94a3b8',
+    fontSize: 10.5,
+    fontWeight: '500',
+    marginTop: 2,
   },
   emptyState: {
     paddingVertical: 60,

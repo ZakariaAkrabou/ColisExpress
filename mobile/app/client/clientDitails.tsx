@@ -13,8 +13,8 @@ import {
 } from 'react-native';
 import { MapPin, Phone, User, X, Pencil, Trash2, Save } from 'lucide-react-native';
 
-import type { Client } from './clientPage';
-import type { Colis } from '../colis/colis_page';
+import type { Client } from '../../types/clients.types';
+import type { Colis } from '../../types/colis.types';
 
 interface ClientDetailModalProps {
   client: Client | null;
@@ -49,6 +49,21 @@ export default function ClientDetailModal({
   }, [client]);
 
   if (!client) return null;
+
+  const normalizePhone = (p?: string) => (p || '').replace(/\s+/g, '');
+  const matchesPerson = (personName?: string, personPhone?: string) => {
+    const clientPhone = normalizePhone(client.phone);
+    const targetPhone = normalizePhone(personPhone);
+    if (clientPhone && targetPhone && clientPhone === targetPhone) return true;
+    return (personName || '').trim().toLowerCase() === client.name.trim().toLowerCase();
+  };
+
+  const sentColis = colisList.filter((c) => matchesPerson(c.senderName, c.senderPhone));
+  const receivedColis = colisList.filter((c) => matchesPerson(c.receiverName, c.receiverPhone));
+  const totalAssociated = new Set([
+    ...sentColis.map((c) => c.id),
+    ...receivedColis.map((c) => c.id),
+  ]).size;
 
   const handleSave = async () => {
     if (!name.trim() || !phone.trim() || !city.trim()) {
@@ -164,7 +179,7 @@ export default function ClientDetailModal({
 
                 <View style={styles.shipmentsCard}>
                   <Text style={styles.shipmentsNumber}>
-                    {client.totalShipments ?? 0}
+                    {totalAssociated}
                   </Text>
                   <Text style={styles.shipmentsLabel}>
                     Colis associés
